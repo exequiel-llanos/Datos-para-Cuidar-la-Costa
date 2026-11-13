@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>De San Antonio a Algarrobo: Datos para Cuidar la Costa · 5° B</title>
+<!--
+  DE SAN ANTONIO A ALGARROBO: DATOS PARA CUIDAR LA COSTA · Prototipo v0.4 · 5° Básico B
+  Colegio Bicentenario Lions School · Región de Valparaíso
+  Tesina USS: Lectura e interpretación de tablas y gráficos estadísticos desde la gamificación.
+
+  ESTRUCTURA
+  1. Portada animada y registro del equipo.
+  2. Mapa del litoral central: 4 playas (San Antonio, Cartagena, El Quisco, Algarrobo) unidas por 3 compuertas.
+  3. Pantalla de trabajo en dos columnas: a la izquierda la escena y la tabla o gráfico; a la derecha la misión.
+  4. Panel de la profe (PIN) con el Resumen de Interacciones del equipo, CSV y guía impresa.
+
+  PROGRESIÓN (niveles de Curcio)
+  San Antonio  · contaminación urbana · tablas simples y de doble entrada · niveles 1 y 2
+  Cartagena    · erosión costera      · pictogramas con clave             · niveles 1, 2 y 3
+  El Quisco    · crisis hídrica       · barras simples y agrupadas        · niveles 2 y 3
+  Algarrobo    · océano en peligro    · gráficos de líneas                · niveles 3 y 4
+
+  NOTAS PARA EL EQUIPO DE INVESTIGACIÓN
+  - Un solo archivo: HTML, CSS y JavaScript puros, sin librerías ni internet. Para GitHub Pages: index.html.
+  - Arte de bloques original (objeto SPRITES). Lugares reales, datos inventados.
+  - Contenido editable entre los marcadores DATOS-INICIO y DATOS-FIN (PERSONAJES, ERRORES, ZONAS, COMPUERTAS).
+  - Cada respuesta incorrecta se etiqueta con un tipo de error (catálogo ERRORES) para el Resumen de Interacciones.
+  - Avance guardado en el navegador (localStorage): cada dispositivo = un equipo.
+  - Los CSV no incluyen nombres de estudiantes (resguardo ético 3.8 de la tesina).
+-->
+<style>
+:root{
+  --tinta:#1e2b37; --suave:#55687a; --papel:#fffdf7; --borde:#2b3a48;
+  --acento:#f2b200; --acento-osc:#b38300;
+  --ok:#1f8a44; --ok-bg:#e3f6e8; --mal:#c73636; --mal-bg:#fde8e8; --aviso-bg:#fff4d6; --info-bg:#e8f1fb;
+  --mar:#2f7fc4; --mar-osc:#1f5a91; --arena:#e8d49a; --arena-osc:#c8ad68; --piedra:#8d9096; --piedra-osc:#5e6167;
+  --fondo:#e6f2fa; --barra-h:62px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--tinta);background:var(--fondo);-webkit-text-size-adjust:100%;line-height:1.45}
+h1,h2,h3,h4{line-height:1.2}
+.pantalla{display:none}
+.pantalla.activa{display:block}
+.oculto,[hidden]{display:none !important}
+svg.px,.px svg,.px{shape-rendering:crispEdges;image-rendering:pixelated}
+
+/* ---------- Botones ---------- */
+.btn{font:inherit;font-weight:800;border:3px solid var(--borde);background:var(--acento);color:var(--tinta);padding:10px 16px;border-radius:6px;box-shadow:0 4px 0 var(--borde);cursor:pointer;min-height:46px;touch-action:manipulation;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--borde)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:0 4px 0 var(--borde)}
+.btn:focus-visible,.opcion:focus-visible,.seg button:focus-visible,.nodo:focus-visible,.chip-ini:focus-visible{outline:3px solid #1b6fd1;outline-offset:2px}
+.btn.sec{background:#fff}
+.btn.verde{background:#7fd36b}
+.btn.azul{background:#7cc4f2}
+.btn.chico{min-height:38px;padding:6px 12px;font-size:.9rem;box-shadow:0 3px 0 var(--borde)}
+.btn.grande{font-size:1.15rem;padding:12px 22px}
+
+/* ---------- Portada y equipo ---------- */
+#cvFondo{position:fixed;inset:0;width:100%;height:100%;display:none;z-index:0}
+body.con-fondo #cvFondo{display:block}
+.portada{position:fixed;inset:0;overflow:auto;z-index:1}
+.tarjeta-central{position:relative;margin:max(12px,3.5vh) auto 24px;width:min(92vw,600px);background:rgba(255,253,247,.96);border:3px solid var(--borde);box-shadow:0 6px 0 var(--borde);padding:14px 18px 18px;border-radius:6px}
+.tarjeta-central.centrado{text-align:center}
+.etiqueta{display:inline-block;background:var(--borde);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.02em}
+.titulo-pixel{font-family:ui-monospace,"Cascadia Mono","Consolas","Courier New",monospace;font-weight:900;font-size:clamp(1.45rem,5.8vw,2.3rem);margin:.35em 0 .3em;letter-spacing:.03em;text-transform:uppercase;color:var(--tinta);text-shadow:3px 3px 0 var(--acento)}
+.subtitulo{font-weight:800;color:var(--mar-osc);margin:-.2em 0 .5em}
+.tarjeta-central p{margin:.4em 0 .9em}
+.campo label{display:block;font-weight:700;margin:10px 0 4px;font-size:.95rem}
+.campo input{font:inherit;width:100%;padding:9px 10px;border:2px solid var(--borde);border-radius:6px;min-height:44px;background:#fff}
+.grid2{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chip-ini{font:inherit;font-weight:700;background:#fff;border:2px solid var(--borde);border-radius:6px;padding:8px 12px;min-height:42px;cursor:pointer}
+.chip-ini[aria-pressed=true]{background:var(--acento)}
+.nota{font-size:.86rem;color:var(--suave);margin:.6em 0 0}
+
+/* ---------- Barra superior ---------- */
+.barra{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--papel);border-bottom:3px solid var(--borde);min-height:var(--barra-h)}
+.barra h2{font-size:1rem;margin:0;flex:1;min-width:0}
+.barra h2 small{display:block;font-weight:600;color:var(--suave);font-size:.8rem}
+.barra .der{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pasos{display:flex;gap:6px;align-items:center}
+.paso{min-width:34px;height:30px;padding:0 4px;border:2px solid var(--borde);border-radius:5px;display:grid;place-items:center;font-weight:900;font-size:.8rem;background:#fff}
+.paso.hecho{background:var(--ok-bg);color:var(--ok)}
+.paso.en-curso{background:var(--acento)}
+
+/* ---------- Tarjetas ---------- */
+.contenedor{max-width:1100px;margin:0 auto;padding:14px 12px 30px}
+.tarjeta{background:var(--papel);border:3px solid var(--borde);border-radius:8px;padding:12px 14px;box-shadow:0 4px 0 var(--borde)}
+.tarjeta h3{margin:.1em 0 .5em;font-size:1.08rem}
+
+/* ---------- Mapa ---------- */
+.mapa{display:grid;gap:14px;padding:12px;max-width:1300px;margin:0 auto;grid-template-columns:minmax(0,1fr)}
+@media (min-width:920px){ .mapa{grid-template-columns:minmax(0,1fr) 300px;height:calc(100dvh - var(--barra-h));align-items:stretch} .mapa > *{min-height:0} }
+.mapa-svg-wrap{padding:8px;display:flex;align-items:center;justify-content:center}
+.mapa-svg{width:100%;height:100%;max-height:calc(100dvh - var(--barra-h) - 44px);display:block}
+.nodo{cursor:pointer}
+.nodo.bloq{cursor:not-allowed}
+.nodo .marco{transition:transform .12s}
+.nodo:hover .marco{transform:translateY(-3px)}
+.compuerta-lista .brillo{animation:latir 1.2s infinite}
+@keyframes latir{0%,100%{opacity:.25}50%{opacity:.9}}
+.vuela{animation:vuelo 18s linear infinite}
+@keyframes vuelo{from{transform:translateX(-120px)}to{transform:translateX(1120px)}}
+.mece{animation:mecer 2.4s ease-in-out infinite}
+@keyframes mecer{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+.lado{display:flex;flex-direction:column;gap:12px;overflow:auto}
+.peli{display:flex;gap:10px;align-items:flex-end}
+.peli .av{width:56px;flex:0 0 auto}
+.globo{position:relative;background:#fff;border:3px solid var(--borde);border-radius:8px;padding:8px 10px;font-weight:600;font-size:.95rem}
+.inv{display:flex;gap:6px;flex-wrap:wrap}
+.slot{width:44px;height:44px;border:2px solid var(--borde);border-radius:5px;background:#8b8b8b;display:grid;place-items:center;box-shadow:inset 2px 2px 0 rgba(0,0,0,.3)}
+.slot svg{width:30px;height:30px}
+.slot.off svg{filter:grayscale(1) brightness(.6);opacity:.5}
+.faro-fila{display:flex;gap:12px;align-items:flex-end}
+.lista-mov{display:none}
+@media (max-width:719px){
+  .mapa-svg-wrap{display:none}
+  .lista-mov{display:flex;flex-direction:column;gap:10px}
+}
+.item-mov{display:flex;gap:10px;align-items:center;background:#fff;border:3px solid var(--borde);border-radius:8px;padding:8px;box-shadow:0 3px 0 var(--borde)}
+.item-mov .mini{width:96px;flex:0 0 auto;border:2px solid var(--borde);border-radius:4px;overflow:hidden;line-height:0}
+.item-mov.bloq{opacity:.6;filter:grayscale(.7)}
+.item-mov.gate{background:#e7e3da}
+.item-mov.gate.lista{background:var(--aviso-bg)}
+.item-mov.gate.abierta{background:var(--ok-bg)}
+.item-mov .txt{flex:1;min-width:0}
+.item-mov .txt b{display:block}
+.item-mov .txt small{color:var(--suave)}
+
+/* ---------- Pantalla de trabajo ---------- */
+.trabajo{display:grid;gap:14px;padding:12px;max-width:1300px;margin:0 auto;grid-template-columns:minmax(0,1fr)}
+.area-escena,.area-res{display:flex;flex-direction:column;gap:12px;min-height:0}
+@media (min-width:920px){
+  .trabajo{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:calc(100dvh - var(--barra-h));align-items:stretch}
+  .area-escena,.area-res{overflow:auto;padding:2px 4px 8px 2px}
+  .chart{max-height:calc(100dvh - var(--barra-h) - 210px)}
+}
+.banda{border:3px solid var(--borde);border-radius:8px;overflow:hidden;box-shadow:0 4px 0 var(--borde);line-height:0;background:#a7dcf7;flex:0 0 auto}
+.banda svg{width:100%;height:84px;display:block}
+.chart{width:100%;height:auto;display:block;margin:0 auto;background:#fff}
+.graf-card{padding:10px}
+.graf-card .nota{text-align:center}
+.fuente{margin:.5em 0 0;padding:6px 10px;background:#fff4d6;border:2px dashed var(--acento-osc);border-radius:6px;font-size:.88rem;font-weight:700;text-align:center}
+.mision{display:flex;flex-direction:column;gap:10px}
+.hecha{display:flex;gap:8px;align-items:flex-start;background:var(--ok-bg);border-left:5px solid var(--ok);border-radius:6px;padding:7px 10px;font-size:.92rem}
+.hecha b{color:var(--ok);white-space:nowrap}
+.dialogo{display:flex;flex-direction:column;gap:8px}
+.voz{display:flex;gap:8px;align-items:flex-start}
+.voz .av{width:46px;flex:0 0 auto;background:#fff;border:2px solid var(--borde);border-radius:6px;padding:3px;line-height:0}
+.voz .globo{flex:1;font-weight:500;font-size:.95rem;padding:6px 10px}
+.voz .globo b{display:block;font-size:.74rem;color:var(--suave);text-transform:uppercase;letter-spacing:.03em}
+.voz.villano .globo{background:#fde8e8;border-color:#8e2a20}
+.actual{border-top:2px dashed #c9c2b3;padding-top:10px;animation:entra .35s ease-out;display:flex;flex-direction:column;gap:8px}
+@keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.num-mision{display:inline-block;background:var(--acento);border:2px solid var(--borde);font-weight:900;padding:1px 9px;border-radius:4px;font-size:.85rem;align-self:flex-start}
+.num-mision small{font-weight:700}
+.pregunta{font-size:1.12rem;font-weight:800;margin:0}
+.respuesta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.respuesta input{font:inherit;font-size:1.1rem;width:130px;padding:8px 10px;border:2px solid var(--borde);border-radius:6px;min-height:46px}
+.opciones{display:grid;gap:8px}
+.opcion{font:inherit;text-align:left;cursor:pointer;background:#fff;border:3px solid var(--borde);border-radius:8px;box-shadow:0 4px 0 var(--borde);padding:10px 12px;color:var(--tinta);font-weight:700}
+.opcion:active{transform:translateY(3px);box-shadow:0 1px 0 var(--borde)}
+.opcion[aria-pressed=true]{background:var(--acento)}
+.opcion.multi::before{content:"☐  "}
+.opcion.multi[aria-pressed=true]::before{content:"☑  "}
+.conf-fila{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.92rem;font-weight:700}
+.seg{display:inline-flex;border:2px solid var(--borde);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-weight:700;border:0;background:#fff;color:var(--tinta);padding:8px 12px;min-height:40px;cursor:pointer}
+.seg button+button{border-left:2px solid var(--borde)}
+.seg button[aria-pressed=true]{background:var(--acento)}
+.mensaje{margin:0;padding:0;font-size:.95rem}
+.mensaje:empty{display:none}
+.mensaje.ok,.mensaje.mal,.mensaje.aviso,.mensaje.info{padding:9px 11px;border-radius:6px;border-left:5px solid}
+.mensaje.ok{background:var(--ok-bg);border-color:var(--ok)}
+.mensaje.mal{background:var(--mal-bg);border-color:var(--mal)}
+.mensaje.aviso{background:var(--aviso-bg);border-color:var(--acento)}
+.mensaje.info{background:var(--info-bg);border-color:#1b6fd1}
+.mensaje p{margin:.25em 0}
+.pista{background:#fff;border:2px dashed #1b6fd1;border-radius:6px;padding:7px 10px;font-size:.93rem;margin-top:6px}
+.cadena{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0 2px}
+.cadena span{background:#fff;border:2px solid var(--borde);border-radius:6px;padding:3px 8px;font-size:.85rem;font-weight:700}
+.cadena i{font-style:normal;font-weight:900;color:var(--mar-osc)}
+.compromisos{margin:6px 0 0;padding-left:20px}
+.inicio-frase{margin:12px 0 6px}
+.compromisos li{margin:3px 0}
+.tabla-wrap{overflow-x:auto;display:flex;justify-content:center;padding:4px}
+table.datos{border-collapse:collapse;background:#fff;font-size:1rem}
+table.datos caption{caption-side:top;text-align:left;font-weight:800;font-family:ui-monospace,Consolas,"Courier New",monospace;padding:0 0 8px;font-size:1rem}
+table.datos th,table.datos td{border:2px solid var(--borde);padding:6px 12px;text-align:left}
+table.datos th{background:#f1ead8}
+table.datos td.num{text-align:center;font-weight:800;font-size:1.08rem;min-width:70px}
+table.datos td.palotes{line-height:0;padding:6px 10px}
+.inicios{display:flex;flex-wrap:wrap;gap:6px}
+.inicios button{font:inherit;font-size:.88rem;font-weight:700;border:2px solid #1b6fd1;color:#1b5fae;background:#fff;border-radius:999px;padding:4px 10px;cursor:pointer}
+textarea{font:inherit;width:100%;min-height:100px;padding:8px 10px;border:2px solid var(--borde);border-radius:6px;resize:vertical}
+details{font-size:.92rem}
+summary{cursor:pointer;font-weight:700;color:#1b5fae}
+.celebra{text-align:center;background:linear-gradient(90deg,#fff1b8,#dff5d6);border:3px solid var(--borde);border-radius:8px;padding:14px;animation:entra .35s ease-out}
+.celebra .ins{width:84px;margin:6px auto}
+.gate-art.abriendo .puertas{animation:bajar 1s steps(8) forwards}
+.gate-art.abriendo .candado{animation:caer .7s steps(5) forwards}
+@keyframes bajar{to{transform:translateY(130px)}}
+@keyframes caer{to{transform:translateY(90px);opacity:0}}
+.gate-art .puertas,.gate-art .candado{transform-box:view-box}
+
+/* ---------- Panel profe, resumen y guía ---------- */
+.tabla-scroll{overflow:auto;max-height:340px;border:2px solid var(--borde);border-radius:6px;background:#fff}
+table.log{border-collapse:collapse;font-size:.8rem;width:100%}
+table.log th,table.log td{border-bottom:1px solid #d6d0c2;padding:4px 8px;text-align:left;white-space:nowrap}
+table.log th{background:#f1ead8;position:sticky;top:0}
+.principio{border-left:6px solid var(--mar);padding-left:12px;margin:12px 0}
+.principio p{margin:.2em 0}
+#guia-impresa{display:none}
+.res-cab{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.95rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:#fff;border:2px solid var(--borde);border-radius:8px;padding:8px 10px}
+.kpi b{display:block;font-size:1.55rem;line-height:1.1}
+.kpi span{font-size:.82rem;color:var(--suave)}
+.nivel-fila{display:grid;grid-template-columns:190px minmax(0,1fr) 210px;gap:10px;align-items:center;margin:8px 0;font-size:.9rem}
+.nivel-barra{height:22px;background:#eee;border:2px solid var(--borde);border-radius:4px;overflow:hidden}
+.nivel-barra i{display:block;height:100%;background:var(--ok)}
+.nivel-barra i.medio{background:var(--acento)}
+.nivel-barra i.bajo{background:var(--mal)}
+.alerta{display:inline-block;background:var(--mal-bg);color:var(--mal);border:2px solid var(--mal);border-radius:4px;padding:1px 6px;font-size:.76rem;font-weight:800}
+.bien-tag{display:inline-block;background:var(--ok-bg);color:var(--ok);border:2px solid var(--ok);border-radius:4px;padding:1px 6px;font-size:.76rem;font-weight:800}
+.pend-tag{display:inline-block;background:#eee;color:var(--suave);border:2px solid #bbb;border-radius:4px;padding:1px 6px;font-size:.76rem;font-weight:800}
+.chip-r{display:inline-block;border-radius:4px;padding:1px 6px;margin:1px 2px 1px 0;font-size:.78rem;border:1.5px solid;white-space:nowrap}
+.chip-r.ok{background:var(--ok-bg);border-color:var(--ok)}
+.chip-r.mal{background:var(--mal-bg);border-color:var(--mal)}
+.res-tabla{overflow-x:auto}
+table.res{border-collapse:collapse;width:100%;font-size:.84rem;background:#fff}
+table.res th,table.res td{border:1px solid #d6d0c2;padding:5px 7px;text-align:left;vertical-align:top}
+table.res th{background:#f1ead8}
+table.res td.c{text-align:center}
+.explicacion{background:#fff;border-left:5px solid var(--mar);padding:6px 10px;margin:6px 0;font-size:.92rem}
+
+@media (max-width:640px){
+  .banda.zona-banda{display:none}
+  .barra{flex-wrap:wrap}
+  .barra .der{width:100%}
+  .grid2{grid-template-columns:1fr}
+  .nivel-fila{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .vuela,.mece,.compuerta-lista .brillo,.actual,.celebra{animation:none}
+  .gate-art.abriendo .puertas,.gate-art.abriendo .candado{animation:none;opacity:0}
+}
+@media print{
+  body{background:#fff;font-size:12pt}
+  body:not(.imprimiendo-resumen) > *:not(#guia-impresa){display:none !important}
+  body:not(.imprimiendo-resumen) #guia-impresa{display:block}
+  body.imprimiendo-resumen > *:not(#pResumen){display:none !important}
+  body.imprimiendo-resumen #pResumen{display:block !important}
+  body.imprimiendo-resumen .barra,body.imprimiendo-resumen .no-print{display:none !important}
+  .tarjeta{box-shadow:none;break-inside:avoid}
+  .tabla-scroll{max-height:none;overflow:visible}
+  .pg{page-break-after:always;padding:6mm 4mm}
+  .pg:last-child{page-break-after:auto}
+  .lineas div{border-bottom:1px solid #999;height:28px}
+  .chart{max-width:420px;max-height:none}
+}
+</style>
+</head>
+<body class="con-fondo">
+<canvas id="cvFondo" aria-hidden="true"></canvas>
+
+<!-- =================== 1. PORTADA =================== -->
+<section id="pPortada" class="pantalla activa" aria-label="Portada">
+  <div class="portada">
+    <div class="tarjeta-central centrado">
+      <span class="etiqueta">5° básico · Datos y probabilidades · Tablas y gráficos</span>
+      <h1 class="titulo-pixel">De San Antonio<br>a Algarrobo</h1>
+      <p class="subtitulo">Datos para Cuidar la Costa</p>
+      <p>Algo daña nuestra costa: basura de la ciudad que llega al mar, playas que se achican y agua que no alcanza. El Capitán Plasticón quiere esconder por qué. Recorran San Antonio, Cartagena, El Quisco y Algarrobo, lean tablas y gráficos y desenmascaren las causas. ¿Se atreven a ser Detectives de Datos?</p>
+      <button class="btn grande" id="btnComenzar">¡Comenzar la investigación!</button>
+      <p class="nota">Aquí equivocarse es parte del juego: no hay notas ni tiempo límite.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 2. EQUIPO =================== -->
+<section id="pEquipo" class="pantalla" aria-label="Nuestro equipo">
+  <div class="portada">
+    <div class="tarjeta-central">
+      <span class="etiqueta">Antes de partir</span>
+      <h1 class="titulo-pixel" style="font-size:clamp(1.3rem,5vw,1.8rem)">Nuestro equipo de Detectives de Datos</h1>
+      <div class="campo"><label for="nombreEquipo">Nombre del equipo</label><input id="nombreEquipo" maxlength="30" placeholder="Por ejemplo: Los Chungungos" autocomplete="off"></div>
+      <h3 style="margin:12px 0 6px">Integrantes (de 1 a 4)</h3>
+      <div class="grid2" id="integrantes"></div>
+      <p class="nota">Escriban al menos un nombre. Los nombres solo se ven en este dispositivo: los archivos para la investigación no los incluyen.</p>
+      <h3 style="margin:14px 0 6px">¿Cómo llega el equipo hoy?</h3>
+      <div class="chips" role="group" aria-label="Ánimo del equipo">
+        <button class="chip-ini" data-animo="con-energia" aria-pressed="false">Con harta energía</button>
+        <button class="chip-ini" data-animo="tranquilo" aria-pressed="false">Con calma</button>
+        <button class="chip-ini" data-animo="nervioso" aria-pressed="false">Con algo de nervios</button>
+        <button class="chip-ini" data-animo="cansado" aria-pressed="false">Con cansancio</button>
+      </div>
+      <p id="msgAnimo" class="mensaje" style="margin-top:10px"></p>
+      <div class="acciones" style="margin-top:14px">
+        <button class="btn sec" data-ir="pPortada">← Volver</button>
+        <button class="btn" id="btnAlMapa" disabled>Ver el mapa →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 3. MAPA =================== -->
+<section id="pMapa" class="pantalla" aria-label="Mapa del litoral">
+  <header class="barra">
+    <button class="btn sec chico" data-ir="pEquipo">← Equipo</button>
+    <h2>Mapa del litoral central <small id="mapaEquipo"></small></h2>
+    <div class="der">
+      <button class="btn sec chico" data-ir="pDocente">Profe</button>
+    </div>
+  </header>
+  <div class="mapa">
+    <div class="tarjeta mapa-svg-wrap" id="mapaSvg"></div>
+    <div class="lista-mov" id="mapaLista"></div>
+    <aside class="lado">
+      <div class="peli"><div class="av px" id="peliAv"></div><div class="globo" id="peliMsg"></div></div>
+      <div class="tarjeta"><h3>Insignias</h3><div class="inv" id="inv"></div><p class="nota" id="invTxt"></p></div>
+      <div class="tarjeta" id="cajaCompromisos" hidden><h3>Compromisos del equipo</h3><ul class="compromisos" id="listaCompromisos"></ul></div>
+      <div class="tarjeta"><h3>El faro del curso</h3>
+        <div class="faro-fila"><div id="faro" class="px"></div><div><b id="faroTxt"></b><p class="nota" id="faroSub"></p></div></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- =================== 4. TRABAJO =================== -->
+<section id="pTrabajo" class="pantalla" aria-label="Misión">
+  <header class="barra">
+    <button class="btn sec chico" id="btnVolverMapa">← Mapa</button>
+    <h2 id="tituloTrabajo">Playa</h2>
+    <div class="pasos" id="pasos" aria-label="Avance de tareas"></div>
+  </header>
+  <main class="trabajo">
+    <div class="area-escena" id="izq"></div>
+    <div class="area-res" id="der"></div>
+  </main>
+</section>
+
+<!-- =================== PANEL PROFE =================== -->
+<section id="pDocente" class="pantalla" aria-label="Panel de la profe">
+  <header class="barra"><button class="btn sec chico" data-ir="pMapa">← Mapa</button><h2>Panel de la profe</h2></header>
+  <div class="contenedor">
+    <div class="tarjeta" id="cajaPin" style="max-width:420px">
+      <div class="campo"><label for="pin">PIN docente</label><input type="password" id="pin" autocomplete="off"></div>
+      <div class="acciones" style="margin-top:10px"><button class="btn" id="btnPin">Entrar</button></div>
+      <p class="mensaje" id="msgPin"></p>
+    </div>
+    <div id="panelProfe" hidden style="display:flex;flex-direction:column;gap:14px">
+      <div class="tarjeta"><h3>Resumen de Interacciones del equipo</h3>
+        <p id="miniResumen"></p>
+        <div class="acciones"><button class="btn verde" id="btnVerResumen">Ver el Resumen de Interacciones →</button></div>
+      </div>
+      <div class="tarjeta"><h3>Guía docente</h3>
+        <p class="nota" style="margin-top:0">Principios, secuencia sugerida, personajes y pendientes. También pueden imprimir la guía de trabajo para los equipos.</p>
+        <div class="acciones" style="margin-top:10px"><button class="btn" id="btnAbrirGuia">Abrir la guía docente →</button><button class="btn sec" id="btnImprimir">Imprimir guía para los equipos</button></div>
+      </div>
+      <div class="tarjeta"><h3>Faro colectivo</h3>
+        <div class="grid2">
+          <div class="campo"><label for="nEquipos">Equipos en el curso</label><input type="number" id="nEquipos" min="1" max="12"></div>
+          <div class="campo"><label for="otrasZonas">Playas terminadas por los otros equipos</label><input type="number" id="otrasZonas" min="0" max="60"></div>
+        </div>
+        <p class="nota">Cada dispositivo es un equipo. La profe suma aquí el avance de los demás para que el faro muestre el avance real del curso.</p>
+      </div>
+      <div class="tarjeta"><h3>Registro de intentos (crudo)</h3>
+        <p class="nota">Cada intento queda con la playa, la tarea, el nivel de Curcio, la confianza, la respuesta, el tipo de error, las pistas y el tiempo. Descárguenlo al final de cada sesión.</p>
+        <div class="acciones" style="margin:10px 0"><button class="btn verde" id="btnCsv">CSV de intentos</button><button class="btn verde" id="btnCsvRes">CSV resumen por tarea</button><button class="btn sec" id="btnReset">Reiniciar este dispositivo</button></div>
+        <div class="tabla-scroll"><table class="log" id="tablaLog"></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== RESUMEN DE INTERACCIONES =================== -->
+<section id="pResumen" class="pantalla" aria-label="Resumen de Interacciones">
+  <header class="barra"><button class="btn sec chico" data-ir="pDocente">← Panel</button><h2>Resumen de Interacciones <small>Dashboard del grupo</small></h2>
+    <div class="der"><button class="btn sec chico" id="btnImprimirRes">Imprimir o guardar PDF</button></div></header>
+  <div class="contenedor" id="resumenCuerpo" style="display:flex;flex-direction:column;gap:14px"></div>
+</section>
+
+<!-- =================== GUÍA DOCENTE =================== -->
+<section id="pGuia" class="pantalla" aria-label="Guía docente">
+  <header class="barra"><button class="btn sec chico" data-ir="pDocente">← Panel</button><h2>Guía docente</h2></header>
+  <div class="contenedor" style="display:flex;flex-direction:column;gap:14px">
+    <div class="tarjeta" id="principios"></div>
+    <div class="tarjeta"><h3>Secuencia sugerida (2 clases de 45 minutos)</h3>
+      <p class="nota" style="margin-top:0">Tiempo típico estimado por equipo: unos 56 minutos de juego (entre 36 y 101). También cabe en una sola clase de 90 minutos.</p>
+      <ol>
+        <li><b>Clase 1:</b> inicio, San Antonio (tablas, niveles 1 y 2), Compuerta a Cartagena y Cartagena (pictogramas, niveles 1 a 3).</li>
+        <li><b>Clase 2:</b> Compuerta a El Quisco, El Quisco (barras agrupadas, niveles 2 y 3), Compuerta a Algarrobo, Algarrobo (líneas y el gráfico tramposo, niveles 3 y 4) y cierre con el Resumen de Interacciones y los compromisos.</li>
+      </ol>
+      <p class="nota">Todas las actividades ocurren en la pantalla. La guía impresa (botón en el panel de la profe) es un respaldo si fallan los dispositivos.</p>
+    </div>
+    <div class="tarjeta"><h3>Personajes</h3><div id="guiaPersonajes"></div></div>
+    <div class="tarjeta"><h3>Pendientes para la versión final</h3>
+      <ul>
+        <li>Sincronizar el avance y los resúmenes de todos los equipos (hoy cada dispositivo guarda solo su equipo).</li>
+        <li>Pilotear con un equipo de 5° B y ajustar redacción, datos y tiempos.</li>
+        <li>Revisar accesibilidad con el PIE: lectura en voz alta y tamaño de letra.</li>
+        <li>Validar con expertos la clasificación de cada tarea en los niveles de Curcio y el catálogo de errores.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div id="guia-impresa"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+const CONFIG = { pinDocente:'1313', equiposPorDefecto:6, minCaracteres:40, clave:'guardianesCosta5B_v04', version:'v0.4' };
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ahora = () => { const d = new Date(), z = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; };
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const reducirMov = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmtSeg = s => { s = Math.round(s || 0); if(!s) return '—'; const m = Math.floor(s/60), r = s % 60; return m ? `${m} min ${String(r).padStart(2,'0')} s` : `${r} s`; };
+const pct = (a, b) => b ? Math.round(a / b * 100) : null;
+
+/* =========================================================
+   PIXEL ART ORIGINAL
+   ========================================================= */
+const PAL = {k:'#1e1e1e',w:'#ffffff',y:'#f2c335',o:'#e08a2e',g:'#c9ced4',G:'#8d9096',b:'#3b7dd8',B:'#2456a3',c:'#8fd8f2',
+  s:'#e8d49a',S:'#c8ad68',r:'#c0392b',R:'#8e2a20',n:'#a0723f',N:'#6b4423',v:'#5a9e2f',V:'#3d7420',p:'#f2c9a0',x:'#2c3038',X:'#4a505a'};
+const SPRITES = {
+  peli:["................","......kkkk......",".....kwwwwk.....","....kwwwkwwk....","....kwwwwwwkkkkk","....kwwwwwwkyyyy",".....kwwwwkyyyyk","......kwwkooook.",".....kwwwwk.....","....kwwwwwwk....","...kwwwggwwwk...","...kwwgggwwwk...","....kwwwwwwk....",".....kkkkkk.....","......y..y......",".....yy..yy....."],
+  lobo:["....kkkk......","...knnnnk.....","...knknnk.....","..kkknnnk.....","....knnnk.....","....knnnnk....","...knnnnnnk...","..knnnnnnnnk..",".knnnnnnnnnnk.","knNNkkkkkknNNk","kkk.......kkkk"],
+  gaviota:["....kkk.....","...kwwwk....","...kwkwkoo..","...kwwwkoo..","....kwwwk...",".kkkkwwwwk..","kGGGGwwwwwk.",".kkGGGwwwwk.","...kkkkwwk..",".......kk...","......o.o..."],
+  jaiba:["r........r",".r..rr..r.","..rrrrrr..",".rrkrrkrr.","..rrrrrr..",".r.r..r.r."],
+  pinguino:["...kkkk...","..kkkkkk..","..kwkkkk..",".kkkkkooo.",".kwwkkk...","kkwwwwkk..","kkwkkwwkk.","kkwwwwwkk.","kkwwwwwkk.",".kwwwwwk..",".kkwwwkk..","..oo.oo..."],
+  villano:["...kkkkkk...","...kXXXXk...","...kXXXXk...",".kkkkkkkkkk.","...kppppk...","...kpkpkk...","...kppppk...","...kkkkkk...","....kppk....","..kkXXXXkk..",".kXXXrXXXXk.",".kXXXrXXXXk.",".kpkXXXXkpk.","...kXXXXk...","...kXkkXk...","...kk..kk..."],
+  bote:[".......k........",".......kw.......",".......kww......",".......kwww.....","kkkkkkkkkkkkkkkk","krrrrrrrrrrrrrrk",".kRRRRRRRRRRRRk.","..kkkkkkkkkkkk.."],
+  candado:["...kkkk...","..kGggGk..","..kg..gk..","..kg..gk..",".kkkkkkkk.",".kyyyyyyk.",".kyyykyyk.",".kyyykyyk.",".kyyyyyyk.",".kkkkkkkk."],
+  cactus:["....vv....","....vV....",".v..vV..v.",".vV.vV.vV.",".vV.vV.vV.",".vVvvVvvV.","..vvvVvv..","....vV....","....vV....","..xxxxxx..",".xXxxxXxx.","xxxxxxxxxx"],
+  sombrilla:["....kkkk....","..kkrwrwkk..",".krwrwrwrwk.","krwrwrwrwrwk","kkkkkkkkkkkk",".....kn.....",".....kn.....",".....kn.....",".....kn.....",".....kn.....",".....kn.....","....kkkk...."],
+  balde:[".kkkkkk.","k......k","kbbbbbbk","kbbbbbbk",".kbbbbk.",".kbbbbk.","..kkkk.."],
+  saco:["..k....k..",".kSk..kSk.",".kssssssk.","kssssssssk","ksSssSsssk","kssssssssk","kssssssssk",".kkkkkkkk."],
+  ola:["....kkkk..","..kkccwwk.",".kcbbkkcwk","kcbbk..kk.","kbbbk.....","kbbbbk..k.","kbbbbbkkbk","kkkkkkkkkk"],
+  gota:["...kk...","...kk...","..kcck..","..kcbk..",".kcbbbk.","kcwbbbbk","kcbbbbbk","kbbbbbbk",".kbbbbk.","..kkkk.."],
+  botella:["..kk..","..kk..",".kcck.","kccwck","kcwcck","kbbbbk","kbbbbk","kccwck","kcccck",".kkkk."],
+  reciclaje:["kkkkkkkkkkkk","kVVVVVVVVVVk","kkkkkkkkkkkk",".kvvvvvvvvk.",".kvvvwwvvvk.",".kvvwvvwvvk.",".kvvvwwvvvk.",".kvvvvvvvvk.",".kvvvvvvvvk.","..kk....kk.."],
+  camion:["..........kkkkk...","kkkkkkkkk.kcccbk..","kggggggggkkcccbk..","kgbbbbbbgkkbbbbbk.","kggggggggkkbbbbbbk","kkkkkkkkkkkkkkkkkk","..kXk.......kXk...","..kkk.......kkk..."],
+  lupa:[".kkkk...","kcccck..","kcwcck..","kcccck..",".kkkk...","....kk..",".....kk.","......kk"],
+  estrella:["...yy...","...yy...","yyyyyyyy",".yyyyyy.","..yyyy..",".yy..yy.","yy....yy"],
+  ave:["kk...kk","..k.k..","...k..."],
+  ave2:["...k...",".kk.kk.","k.....k"]
+};
+function sprite(name, x, y, s){
+  const rows = SPRITES[name]; let out = '';
+  rows.forEach((row, j) => { let i = 0; while(i < row.length){ const ch = row[i]; if(ch === '.'){ i++; continue; } let k = i; while(k < row.length && row[k] === ch) k++; out += `<rect x="${x+i*s}" y="${y+j*s}" width="${(k-i)*s}" height="${s}" fill="${PAL[ch]}"/>`; i = k; } });
+  return out;
+}
+const anchoSprite = name => Math.max(...SPRITES[name].map(r => r.length));
+function spriteSVG(name, s, label){
+  const rows = SPRITES[name], w = anchoSprite(name)*s, h = rows.length*s;
+  return `<svg class="px" viewBox="0 0 ${w} ${h}" width="100%" ${label?`role="img" aria-label="${esc(label)}"`:'aria-hidden="true"'}>${sprite(name,0,0,s)}</svg>`;
+}
+function dibujarSprite(ctx, name, x, y, s){
+  SPRITES[name].forEach((row, j) => { for(let i = 0; i < row.length; i++){ const ch = row[i]; if(ch === '.') continue; ctx.fillStyle = PAL[ch]; ctx.fillRect(Math.round(x + i*s), Math.round(y + j*s), Math.ceil(s), Math.ceil(s)); } });
+}
+function olas(y, w){ let s=''; for(let x=0;x<w;x+=32) s += `<rect x="${x}" y="${y}" width="16" height="4" fill="#cfefff"/>`; return s; }
+function escenaInterior(tipo){
+  const W = 320; let s = `<rect width="320" height="120" fill="#a7dcf7"/><rect x="268" y="10" width="20" height="20" fill="#f2c335"/><rect x="150" y="14" width="40" height="8" fill="#fff"/><rect x="158" y="8" width="20" height="6" fill="#fff"/>`;
+  if(tipo === 'puerto'){
+    s += `<rect y="70" width="${W}" height="50" fill="#2f7fc4"/>${olas(72,W)}<rect y="108" width="${W}" height="12" fill="#1f5a91"/><rect x="0" y="60" width="150" height="14" fill="#8d9096"/><rect x="0" y="60" width="150" height="3" fill="#c9ced4"/>`;
+    [36,86].forEach(x => { s += `<rect x="${x}" y="10" width="6" height="50" fill="#e08a2e"/><rect x="${x-14}" y="12" width="56" height="5" fill="#e08a2e"/><rect x="${x+34}" y="17" width="2" height="22" fill="#1e1e1e"/><rect x="${x+30}" y="39" width="10" height="4" fill="#1e1e1e"/>`; });
+    s += `<rect x="104" y="48" width="22" height="12" fill="#c0392b" stroke="#1e1e1e"/><rect x="126" y="48" width="22" height="12" fill="#3b7dd8" stroke="#1e1e1e"/><rect x="114" y="36" width="22" height="12" fill="#5a9e2f" stroke="#1e1e1e"/>`;
+    s += sprite('reciclaje',2,40,1.7) + sprite('bote',160,56,3) + `<rect x="250" y="96" width="62" height="24" fill="#4a505a"/><rect x="262" y="90" width="40" height="8" fill="#5f6670"/>` + sprite('lobo',262,66,2) + sprite('botella',222,92,1.6) + sprite('botella',150,100,1.4) + sprite('ave',210,22,3);
+  } else if(tipo === 'cartagena'){
+    s += `<rect y="96" width="${W}" height="24" fill="#2f7fc4"/>${olas(98,W)}<rect x="130" y="82" width="190" height="16" fill="#e8d49a"/><rect x="0" y="44" width="140" height="76" fill="#c8ad68"/><rect x="0" y="44" width="140" height="6" fill="#6cbd45"/>`;
+    s += `<rect x="18" y="20" width="56" height="24" fill="#f4e6b8" stroke="#6b4423" stroke-width="2"/><rect x="14" y="14" width="64" height="8" fill="#c0392b"/><rect x="24" y="8" width="44" height="8" fill="#c0392b"/><rect x="26" y="28" width="8" height="8" fill="#3b7dd8"/><rect x="42" y="28" width="8" height="8" fill="#3b7dd8"/><rect x="58" y="30" width="8" height="14" fill="#6b4423"/>`;
+    s += `<rect x="96" y="40" width="44" height="4" fill="#1e1e1e"/>`; for(let x=98;x<140;x+=8) s += `<rect x="${x}" y="32" width="2" height="8" fill="#1e1e1e"/>`;
+    for(let f=0; f<4; f++) for(let k=0; k<3; k++) s += `<rect x="${130+k*10}" y="${54+f*10}" width="10" height="10" fill="${(f+k)%2?'#8d9096':'#9a9da3'}" stroke="#5e6167"/>`;
+    s += sprite('saco',164,84,1.4) + sprite('saco',180,84,1.4) + sprite('saco',172,76,1.4) + sprite('sombrilla',210,56,2.4) + sprite('sombrilla',262,58,2.4) + sprite('gaviota',236,14,2) + sprite('ave',100,12,2);
+  } else if(tipo === 'quisco'){
+    s += `<rect y="40" width="${W}" height="26" fill="#2f7fc4"/>${olas(42,W)}<rect y="66" width="${W}" height="54" fill="#e8d49a"/><rect y="66" width="${W}" height="3" fill="#c8ad68"/><rect y="104" width="${W}" height="16" fill="#4a505a"/>`;
+    for(let x=0;x<W;x+=30) s += `<rect x="${x+6}" y="111" width="14" height="2" fill="#f2c335"/>`;
+    s += sprite('sombrilla',10,56,2) + sprite('sombrilla',44,62,2) + sprite('sombrilla',78,56,2) + sprite('sombrilla',112,62,2);
+    s += `<rect x="156" y="56" width="4" height="44" fill="#8d9096"/><rect x="150" y="52" width="16" height="6" fill="#8d9096"/><rect x="148" y="64" width="4" height="4" fill="#c0392b"/><rect x="152" y="68" width="4" height="4" fill="#c0392b"/><rect x="156" y="72" width="4" height="4" fill="#c0392b"/><rect x="160" y="76" width="4" height="4" fill="#c0392b"/><rect x="164" y="80" width="4" height="4" fill="#c0392b"/><rect x="164" y="64" width="4" height="4" fill="#c0392b"/><rect x="148" y="80" width="4" height="4" fill="#c0392b"/><rect x="160" y="68" width="4" height="4" fill="#c0392b"/><rect x="152" y="76" width="4" height="4" fill="#c0392b"/>`;
+    s += sprite('camion',190,80,2.6) + sprite('cactus',282,64,3) + sprite('jaiba',120,92,2) + sprite('ave',230,18,3);
+  } else if(tipo === 'algarrobo'){
+    s += `<rect y="50" width="${W}" height="70" fill="#2f7fc4"/>${olas(52,W)}<rect y="110" width="${W}" height="10" fill="#1f5a91"/>`;
+    for(let x=14;x<150;x+=14){ const h = 18 + (x*7)%16; for(let y=120-h; y<120; y+=6) s += `<rect x="${x + ((y/6)%2?2:0)}" y="${y}" width="4" height="6" fill="${(y/6)%2?'#3d7420':'#5a9e2f'}"/>`; }
+    s += `<rect x="180" y="70" width="140" height="50" fill="#2c3038"/><rect x="196" y="60" width="110" height="12" fill="#4a505a"/><rect x="214" y="52" width="70" height="10" fill="#5f6670"/><rect x="196" y="60" width="110" height="3" fill="#ffffff"/>`;
+    s += sprite('pinguino',214,28,2) + sprite('pinguino',240,30,2) + sprite('pinguino',266,26,2);
+    s += `<rect x="18" y="34" width="70" height="16" fill="#fffdf7" stroke="#2b3a48" stroke-width="2"/><text x="53" y="46" text-anchor="middle" font-size="9" font-weight="800" font-family="ui-monospace,Consolas,monospace" fill="#1e2b37">SANTUARIO</text><rect x="51" y="50" width="4" height="10" fill="#6b4423"/>` + sprite('ave',120,18,3);
+  }
+  return s;
+}
+const banda = (tipo) => `<div class="banda px zona-banda"><svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${escenaInterior(tipo)}</svg></div>`;
+
+/* =========================================================
+   DATOS-INICIO · Contenido editable (datos inventados, lugares reales)
+   Respuestas incorrectas: fb { respuesta: [retroalimentación, código de error] }.
+   Varios códigos se separan con "|". Los códigos están en ERRORES.
+   ========================================================= */
+const PERSONAJES = {
+  peli:      {nombre:'Peli, el pelícano', sprite:'peli', rol:'Guía de la investigación. Acompaña a Detectives de Datos en todo el recorrido.'},
+  lucas:     {nombre:'Lucas, el lobo marino', sprite:'lobo', rol:'Vive en el puerto de San Antonio y esquiva plásticos todos los días.'},
+  gabi:      {nombre:'Gabi, la gaviota', sprite:'gaviota', rol:'Vigila la terraza de Cartagena y ve cómo el mar se come la playa.'},
+  juana:     {nombre:'Juana, la jaiba', sprite:'jaiba', rol:'Desde su roca en El Quisco ve pasar los camiones aljibe.'},
+  humbi:     {nombre:'Humbi, el pingüino de Humboldt', sprite:'pinguino', rol:'Anida en el Islote Pájaros Niños de Algarrobo.'},
+  plasticon: {nombre:'Capitán Plasticón', sprite:'villano', rol:'Villano que esconde las verdaderas causas del daño: culpa a terceros y usa gráficos para engañar.', villano:true}
+};
+
+const ERRORES = {
+  conteo_grupos:      {nombre:'Cuenta mal los grupos de palotes', nivel:1, sugerencia:'Contar de 5 en 5 señalando en la tabla cada grupo cruzado y luego los palotes sueltos.'},
+  fila_columna:       {nombre:'Lee la fila o columna equivocada', nivel:1, sugerencia:'Seguir filas y columnas con el dedo en la pantalla; nombrar el encabezado antes de leer.'},
+  frec_categoria:     {nombre:'Confunde la frecuencia (¿cuántos?) con la categoría (¿qué?)', nivel:2, sugerencia:'Distinguir preguntas «¿qué?» y «¿cuántos?»; subrayar la palabra clave de la pregunta.'},
+  operacion:          {nombre:'Usa la operación equivocada (suma en vez de resta)', nivel:2, sugerencia:'Comparar las dos barras o filas lado a lado en la pantalla y contar lo que sobra.'},
+  dato_aislado:       {nombre:'Responde con un dato suelto, sin comparar', nivel:2, sugerencia:'Pedir que nombren los dos datos que se comparan antes de operar.'},
+  escala_picto:       {nombre:'No aplica la clave del pictograma', nivel:1, sugerencia:'Contar de n en n usando el valor de la clave; escribir la clave junto a cada fila.'},
+  medio_simbolo:      {nombre:'Ignora o lee mal el medio símbolo', nivel:2, sugerencia:'Señalar en la pantalla el símbolo partido y preguntar cuánto vale la mitad de la clave.'},
+  serie_equivocada:   {nombre:'Confunde las series de un gráfico agrupado', nivel:2, sugerencia:'Revisar la leyenda y pintar o señalar cada serie con su color.'},
+  no_proyecta:        {nombre:'Repite el último dato en vez de proyectar', nivel:3, sugerencia:'Preguntar «¿y el próximo?» y verbalizar el patrón antes de calcular.'},
+  ritmo:              {nombre:'Calcula mal el ritmo de cambio', nivel:3, sugerencia:'Escribir las diferencias entre datos consecutivos y comprobar que se repiten.'},
+  paso_incompleto:    {nombre:'Deja la respuesta a medio camino (falta un paso)', nivel:3, sugerencia:'Separar el problema en pasos y releer qué pide la pregunta.'},
+  rechaza_inferencia: {nombre:'Cree que con datos no se puede predecir', nivel:3, sugerencia:'Conversar la diferencia entre certeza y predicción razonable.'},
+  tendencia_invertida:{nombre:'Lee la tendencia al revés', nivel:3, sugerencia:'Recorrer la línea con el dedo de izquierda a derecha diciendo «sube» o «baja».'},
+  acepta_conclusion:  {nombre:'Acepta la conclusión sin cuestionarla (correlación = causa)', nivel:4, sugerencia:'Lista de chequeo: ¿quién midió?, ¿cuándo?, ¿dónde?, ¿hay otra causa posible?'},
+  trampa_incompleta:  {nombre:'Detecta solo parte de las trampas del gráfico', nivel:4, sugerencia:'Usar la misma lista de chequeo y comparar entre equipos qué trampas encontró cada uno.'},
+  otro:               {nombre:'Otro error (sin clasificar)', nivel:0, sugerencia:'Revisar la respuesta textual en la trazabilidad.'}
+};
+
+const ZONAS = [
+  {id:'sanantonio', nombre:'San Antonio', titulo:'Puerto, ciudad y basura que llega al mar', problema:'Contaminación urbana: basura que no se recicla, queda en la ciudad y la lluvia arrastra al mar', representacion:'Tablas simples y de doble entrada', niveles:'Niveles 1 y 2', escena:'puerto', color:'#c0392b', insignia:'tablas',
+   intro:[
+     {q:'peli', t:'¡Les damos la bienvenida, Detectives de Datos! El mar de San Antonio está lleno de basura. ¿De dónde sale? Busquen pistas en las tablas.'},
+     {q:'lucas', t:'¡Hola! Soy Lucas. Esquivo botellas y bolsas para nadar, y son cosas de la ciudad, no del mar. ¿Me ayudan a leer estas tablas?'}
+   ],
+   preguntas:[
+     {id:'t11', tarea:'1.1', curcio:1, tipo:'numero',
+      visual:{tipo:'conteo', titulo:'Residuos recogidos en el muelle (sábado)', enc:['Residuo','Conteo'], filas:[['Botellas plásticas',17],['Latas',12],['Mascarillas',9],['Redes de pesca',6],['Bolsas plásticas',14]]},
+      voz:{q:'lucas', t:'Cada grupo de palotes cruzados vale 5.'},
+      texto:'¿Cuántas mascarillas recogió el voluntariado en el muelle?', respuesta:9, unidad:'mascarillas',
+      fb:{'8':['¡Casi! El grupo cruzado tiene 5 palotes: cuenten también el que cruza.','conteo_grupos'],
+          '2':['Contaron los grupos, no los palotes. Un grupo cruzado vale 5 y cada palote suelto vale 1.','conteo_grupos'],
+          '4':['Ese es solo el grupo de palotes sueltos. Falta sumar el grupo de 5.','conteo_grupos'],
+          '5':['Ese es solo el grupo cruzado. Falta sumar los palotes sueltos.','conteo_grupos'],
+          '17':['Ese número es de otra fila. Pongan el dedo en «Mascarillas» y lean solo esa fila.','fila_columna'],
+          '12':['Ese número es de otra fila. Pongan el dedo en «Mascarillas» y lean solo esa fila.','fila_columna'],
+          '6':['Ese número es de otra fila. Pongan el dedo en «Mascarillas» y lean solo esa fila.','fila_columna'],
+          '14':['Ese número es de otra fila. Pongan el dedo en «Mascarillas» y lean solo esa fila.','fila_columna']},
+      fbGeneral:['Cuenten de 5 en 5 los grupos cruzados y después sumen los palotes sueltos.','otro'],
+      pistas:['Busquen la fila que dice «Mascarillas».','Un grupo de palotes cruzados vale 5.','Cuenten: 5 del grupo cruzado y sigan con los sueltos: 6, 7, 8…'],
+      bien:{q:'lucas', t:'¡Bacán! Nueve mascarillas menos en el agua.'},
+      modelo:'5 del grupo cruzado + 4 sueltos = 9.', resumen:'Mascarillas: 9.'},
+     {id:'t12', tarea:'1.2', curcio:2, tipo:'numero',
+      visual:{tipo:'tabla', titulo:'Kilos de basura que reciclaron tres barcos pesqueros (marzo)', enc:['Barco','Plástico (kg)','Metal (kg)'], filas:[['Don Pancho',12,9],['Mar Azul',20,6],['Estrella del Sur',15,11]]},
+      voz:{q:'lucas', t:'Tabla de doble entrada: busquen la fila del barco y la columna del material.'},
+      texto:'¿Cuántos kilos de plástico MÁS recicló el barco Mar Azul que el barco Don Pancho?', respuesta:8, unidad:'kilos',
+      fb:{'32':['Sumaron los dos barcos. «Cuántos más» pide la diferencia: hay que restar.','operacion'],
+          '20':['Ese es solo el plástico del Mar Azul. Falta compararlo con el de Don Pancho.','dato_aislado'],
+          '12':['Ese es solo el plástico de Don Pancho. Falta compararlo con el del Mar Azul.','dato_aislado'],
+          '3':['Esa diferencia es de la columna de metal (9 y 6). La pregunta es por el plástico.','fila_columna'],
+          '14':['Restaron el plástico y el metal del mismo barco. Comparen los dos barcos en la misma columna.','fila_columna'],
+          '5':['Revisen qué barcos comparan: la pregunta es Mar Azul y Don Pancho.','fila_columna']},
+      fbGeneral:['Busquen la columna «Plástico (kg)», bajen hasta la fila de cada barco y después resten.','otro'],
+      pistas:['Pongan un dedo en la columna «Plástico (kg)».','Bajen hasta «Mar Azul» y después hasta «Don Pancho». Anoten los dos números.','Resten el mayor menos el menor: 20 − 12.'],
+      bien:{q:'lucas', t:'¡Exacto! El Mar Azul sacó 8 kilos más de plástico.'},
+      modelo:'Plástico: Mar Azul 20 y Don Pancho 12. 20 − 12 = 8.', resumen:'Mar Azul recicló 8 kg más de plástico.'},
+     {id:'t13', tarea:'1.3', curcio:2, tipo:'opcion', sesgo:['frec_categoria','fila_columna'],
+      visual:{tipo:'tabla', titulo:'Residuos recogidos en dos sectores de San Antonio', enc:['Residuo','Muelle','Playa de Llolleo'], filas:[['Botellas plásticas',9,14],['Mascarillas',5,7],['Redes de pesca',16,3],['Latas',8,6]]},
+      voz:{q:'lucas', t:'¡Ojo, que esta pregunta tiene trampa!'},
+      texto:'¿QUÉ residuo se recogió más en la Playa de Llolleo?',
+      opciones:['Botellas plásticas','14','Redes de pesca','16'], respuesta:'Botellas plásticas',
+      fb:{'14':['14 dice CUÁNTAS veces apareció, no QUÉ residuo es. La pregunta pide el nombre: ¿en qué fila está el 14?','frec_categoria'],
+          'Redes de pesca':['Las redes son lo que más hay en el Muelle. Revisen solo la columna de la Playa de Llolleo.','fila_columna'],
+          '16':['16 es un número, y además está en la columna del Muelle. La pregunta pide el NOMBRE del residuo en la Playa de Llolleo.','frec_categoria|fila_columna']},
+      pistas:['La pregunta dice «qué residuo»: la respuesta es un nombre, no un número.','Usen solo la columna «Playa de Llolleo».','Busquen el número más grande de esa columna y lean el nombre de su fila.'],
+      bien:{q:'lucas', t:'¡Eso! El 14 dice CUÁNTAS; la fila dice QUÉ. Y esas botellas se podían reciclar…'},
+      modelo:'En la columna Llolleo el mayor es 14: fila «Botellas plásticas».', resumen:'En Llolleo, lo que más se recogió: botellas plásticas (14).'}
+   ]},
+  {id:'cartagena', nombre:'Cartagena', titulo:'Patrimonio, historia y erosión costera', problema:'Erosión costera', representacion:'Pictogramas con clave', niveles:'Niveles 1, 2 y paso al 3', escena:'cartagena', color:'#c8962e', insignia:'clave',
+   intro:[
+     {q:'peli', t:'¡Llegamos a Cartagena, la ciudad del poeta Vicente Huidobro! Aquí el mar se está «comiendo» la playa.'},
+     {q:'gabi', t:'¡Hola! Soy Gabi. El vecindario midió cuánta playa se ha perdido y lo dibujó en pictogramas. ¡Fíjense en la clave!'}
+   ],
+   preguntas:[
+     {id:'t21', tarea:'2.1', curcio:1, tipo:'numero', sesgo:['escala_picto'],
+      visual:{tipo:'picto', titulo:'Metros de playa que se ha comido el mar (últimos 10 años)', simbolo:'balde', vale:5, unidad:'metros', filas:[['Playa Grande',6],['Playa Chica',3],['Playa San Sebastián',4]]},
+      voz:{q:'gabi', t:'Cada balde vale 5 metros, no 1.'},
+      texto:'¿Cuántos metros de playa ha perdido la Playa Grande?', respuesta:30, unidad:'metros',
+      fb:{'6':['¡Bien contados los 6 baldes! Pero cada balde vale 5 metros. ¿Cuánto es 6 veces 5?','escala_picto'],
+          '11':['Sumaron 6 + 5. Cada balde vale 5: hay que sumar 5 seis veces (o multiplicar 6 × 5).','operacion'],
+          '15':['Ese número es de otra playa. Busquen la fila de la Playa Grande.','fila_columna'],
+          '20':['Ese número es de otra playa. Busquen la fila de la Playa Grande.','fila_columna'],
+          '3':['Revisen la fila: la Playa Grande es la primera. Y recuerden que cada balde vale 5.','fila_columna|escala_picto'],
+          '4':['Revisen la fila: la Playa Grande es la primera. Y recuerden que cada balde vale 5.','fila_columna|escala_picto']},
+      fbGeneral:['Cuenten los baldes de la Playa Grande y después cuenten de 5 en 5.','otro'],
+      pistas:['Busquen la fila «Playa Grande» y cuenten los baldes.','Miren la clave: 1 balde = 5 metros.','Cuenten de 5 en 5, un número por balde: 5, 10, 15, 20…'],
+      bien:{q:'gabi', t:'¡Treinta metros! Como tres buses en fila.'},
+      modelo:'6 baldes × 5 metros = 30 metros.', resumen:'Playa Grande perdió 30 metros.'},
+     {id:'t22', tarea:'2.2', curcio:2, tipo:'numero', sesgo:['medio_simbolo','escala_picto'],
+      visual:{tipo:'picto', titulo:'Sacos de arena puestos para frenar las olas', simbolo:'saco', vale:10, unidad:'sacos', filas:[['Año pasado (2025)',4],['Este año (2026)',7.5]]},
+      voz:{q:'gabi', t:'El vecindario puso sacos de arena para frenar las olas. Ojo: hay un saco cortado por la mitad.'},
+      texto:'¿Cuántos sacos de arena MÁS se pusieron este año que el año pasado?', respuesta:35, unidad:'sacos',
+      fb:{'3.5':['Esa es la diferencia en dibujos. Cada dibujo vale 10 sacos.','escala_picto'],
+          '3':['Esa es la diferencia en dibujos, y les faltó el medio. Cada dibujo vale 10 sacos.','escala_picto|medio_simbolo'],
+          '4':['Esa es la diferencia en dibujos redondeada. Cada dibujo vale 10 sacos.','escala_picto|medio_simbolo'],
+          '30':['¡Muy cerca! Les faltó el medio saco: medio dibujo vale la mitad de 10.','medio_simbolo'],
+          '40':['Revisen el medio saco: medio dibujo vale 5, no 10.','medio_simbolo'],
+          '115':['Sumaron los dos años. «Cuántos más» pide restar.','operacion'],
+          '75':['Ese es el total de este año. Falta restarle el del año pasado.','dato_aislado'],
+          '70':['Este año hay 7 dibujos y medio. ¿Cuánto vale el medio?','medio_simbolo|dato_aislado']},
+      fbGeneral:['Calculen cuántos sacos hay cada año usando la clave y después resten.','otro'],
+      pistas:['Calculen primero los sacos de cada año: cada dibujo = 10 sacos.','El medio dibujo vale la mitad de 10, o sea 5.','Este año: 70 + 5 = 75. Año pasado: 40. Ahora resten.'],
+      bien:{q:'gabi', t:'¡35 sacos más! El vecindario está trabajando harto.'},
+      modelo:'Este año 75 sacos y el año pasado 40: 75 − 40 = 35.', resumen:'Este año se pusieron 35 sacos más.'},
+     {id:'t23', tarea:'2.3', curcio:3, tipo:'opcion',
+      visual:{tipo:'picto', titulo:'Metros de arena entre la ola más alta y la terraza', simbolo:'ola', vale:4, unidad:'metros', filas:[['Verano 2023',5],['Verano 2024',4],['Verano 2025',3],['Verano 2026',2],['Verano 2027','?']]},
+      voz:{q:'gabi', t:'Cada verano la ola llega más cerca de la terraza. Si nada cambia… ¿qué pasará?'},
+      texto:'Si el mar sigue avanzando igual, ¿qué pasará el verano 2027?',
+      opciones:['Quedarán 4 metros.','Quedarán 8 metros, igual que hoy.','Quedará 1 metro: se pierde un dibujo por verano.','No se puede saber nada del futuro.'],
+      respuesta:'Quedarán 4 metros.',
+      fb:{'Quedarán 8 metros, igual que hoy.':['8 metros es lo que hay HOY. Predecir es pensar qué viene después: ¿cuánto se pierde cada verano?','no_proyecta'],
+          'Quedará 1 metro: se pierde un dibujo por verano.':['¡Bien visto que se pierde un dibujo por verano! Pero ese dibujo que queda no vale 1 metro: miren la clave.','escala_picto'],
+          'No se puede saber nada del futuro.':['No hay certeza total, pero los datos muestran un patrón que se repite cada verano. Con ese patrón sí se puede hacer una predicción razonable.','rechaza_inferencia']},
+      pistas:['Calculen los metros de cada verano: cada ola = 4 metros.','20, 16, 12, 8… ¿cuánto baja cada verano?','Si baja 4 metros cada verano, a 8 réstenle 4.'],
+      bien:{q:'gabi', t:'¡Así es! Quedarían 4 metros. Por eso hay que cuidar las dunas.'},
+      modelo:'20, 16, 12, 8: se pierden 4 por verano. 8 − 4 = 4.', resumen:'Predicción 2027: quedarán 4 metros.'}
+   ]},
+  {id:'quisco', nombre:'El Quisco', titulo:'Verano, turismo y crisis hídrica', problema:'Crisis hídrica', representacion:'Gráficos de barras simples y agrupadas', niveles:'Niveles 2 y 3', escena:'quisco', color:'#2f7fc4', insignia:'agua',
+   intro:[
+     {q:'peli', t:'¡El Quisco en verano! Llegan miles de turistas y el agua dulce no alcanza.'},
+     {q:'juana', t:'¡Hola! Soy Juana, la jaiba. La municipalidad anotó cuánta agua se usa en invierno y en verano. ¡Miren la leyenda!'}
+   ],
+   preguntas:[
+     {id:'t31', tarea:'3.1', curcio:2, tipo:'numero',
+      visual:{tipo:'agrupadas', titulo:'Agua dulce usada en El Quisco en un día', yTitle:'Miles de litros', labels:['2024','2025','2026'], series:[{nombre:'Julio (invierno)', values:[20,20,20], color:'#7cc4f2'},{nombre:'Febrero (verano)', values:[50,60,70], color:'#e08a2e'}], yMax:90, step:10},
+      voz:{q:'juana', t:'Celeste es julio (invierno) y naranja es febrero (verano).'},
+      texto:'En 2026, ¿cuántos miles de litros de agua MÁS se usaron en febrero que en julio?', respuesta:50, unidad:'miles de litros',
+      fb:{'90':['Sumaron las dos barras. «Cuántos más» pide restar.','operacion'],
+          '70':['Ese es solo febrero de 2026. Falta compararlo con julio.','dato_aislado'],
+          '20':['Ese es solo julio de 2026. Falta compararlo con febrero.','dato_aislado'],
+          '40':['Esa diferencia es de 2025. Busquen el grupo de barras de 2026.','fila_columna'],
+          '30':['Esa diferencia es de 2024. Busquen el grupo de barras de 2026.','fila_columna'],
+          '10':['Restaron dos barras naranjas de años distintos. La pregunta compara febrero y julio del mismo año (2026).','serie_equivocada']},
+      fbGeneral:['Busquen el grupo de 2026, lean la barra naranja y la celeste, y resten.','otro'],
+      pistas:['Busquen el grupo de barras de 2026.','La barra naranja es febrero y la celeste es julio. Lean a qué número llega cada una.','Resten: febrero − julio.'],
+      bien:{q:'juana', t:'¡50 mil litros más! En verano se usa más del triple.'},
+      modelo:'2026: 70 − 20 = 50 mil litros más.', resumen:'2026: febrero usó 50 mil litros más que julio.'},
+     {id:'t32', tarea:'3.2', curcio:3, tipo:'numero', sesgo:['no_proyecta'],
+      visual:{tipo:'agrupadas', titulo:'Agua dulce usada en El Quisco en un día', yTitle:'Miles de litros', labels:['2024','2025','2026','2027'], series:[{nombre:'Julio (invierno)', values:[20,20,20,null], color:'#7cc4f2'},{nombre:'Febrero (verano)', values:[50,60,70,null], color:'#e08a2e'}], yMax:90, step:10, ref:{valor:60, texto:'Agua disponible: 60'}},
+      voz:{q:'juana', t:'Las barras naranjas crecen cada verano. La línea roja es el agua que hay. ¿Alcanzará en 2027?'},
+      texto:'Si febrero sigue subiendo igual, ¿cuántos miles de litros FALTARÁN cada día de febrero de 2027?', respuesta:20, unidad:'miles de litros',
+      fb:{'10':['Eso faltó en 2026 (70 − 60). La pregunta es por 2027: primero predigan cuánto se usará.','no_proyecta'],
+          '80':['80 es lo que se usará en 2027. Ahora compárenlo con la línea roja.','paso_incompleto'],
+          '70':['70 es lo que se usó en 2026. Predigan 2027 y compárenlo con la línea roja.','no_proyecta|paso_incompleto'],
+          '60':['60 es el agua disponible. Falta compararla con lo que se usará en 2027.','paso_incompleto'],
+          '30':['Revisen el ritmo: febrero sube 10 cada verano, no 20.','ritmo'],
+          '140':['Sumaron. Para saber cuánto falta, se resta.','operacion'],
+          '0':['En 2027 se usaría más agua que la disponible. Revisen su predicción.','ritmo']},
+      fbGeneral:['Primero predigan febrero de 2027 y después compárenlo con la línea roja.','otro'],
+      pistas:['Miren las barras naranjas: ¿cuánto sube cada febrero?','En 2027 se usarían 70 + 10 = 80 mil litros.','La línea roja marca 60. Lo que falta es 80 − 60.'],
+      bien:{q:'juana', t:'¡Faltarían 20 mil litros al día! Por eso cada gota cuenta.'},
+      modelo:'Febrero sube 10 por verano: 70 + 10 = 80. Hay 60: 80 − 60 = 20.', resumen:'Faltarían 20 mil litros al día en 2027.'}
+   ]},
+  {id:'algarrobo', nombre:'Algarrobo', titulo:'Naturaleza, conservación y el futuro', problema:'Océano en peligro (los tres desafíos)', representacion:'Gráficos de líneas', niveles:'Niveles 3 y 4', escena:'algarrobo', color:'#2e8a7a', insignia:'detective',
+   intro:[
+     {q:'peli', t:'¡Última parada: Algarrobo! En el Islote Pájaros Niños viven pingüinos de Humboldt.'},
+     {q:'humbi', t:'¡Hola! Soy Humbi. Cada año hay menos orilla limpia para nuestros nidos. Y alguien anda engañando con gráficos…'},
+     {q:'plasticon', t:'¡Ja, ja! Soy el Capitán Plasticón. ¡Mis gráficos dicen que todo está perfecto!'}
+   ],
+   preguntas:[
+     {id:'t41', tarea:'4.1', curcio:3, tipo:'numero',
+      visual:{tipo:'lineas', titulo:'Metros de orilla limpia donde anidan los pingüinos', yTitle:'Metros', labels:['2022','2023','2024','2025','2026','2027','2028','2029'], values:[500,450,400,350,300,null,null,null], yMax:600, step:100, ref:{valor:200, texto:'Punto crítico: 200 m'}},
+      voz:{q:'humbi', t:'La línea roja es el punto crítico: con 200 metros o menos, mi colonia estaría en peligro.'},
+      texto:'Si la línea sigue bajando al mismo ritmo, ¿en qué AÑO llegará al punto crítico de 200 metros?', respuesta:2028, unidad:'',
+      fb:{'2027':['En 2027 todavía quedarían 250 metros. Sigan bajando de a 50.','ritmo'],
+          '2026':['2026 es el último dato real: ahí hay 300 metros. La pregunta es por el futuro.','no_proyecta'],
+          '2029':['Revisen el ritmo: baja 50 metros cada año. ¿En qué año se llega justo a 200?','ritmo'],
+          '2030':['Revisen el ritmo: baja 50 metros cada año. ¿En qué año se llega justo a 200?','ritmo'],
+          '200':['200 es el punto crítico, en metros. La pregunta pide el AÑO en que se llega ahí.','frec_categoria'],
+          '250':['250 son metros, y es lo que quedaría en 2027. La pregunta pide un año.','frec_categoria|ritmo']},
+      fbGeneral:['Fíjense cuántos metros baja cada año y sigan la línea hacia el futuro.','otro'],
+      pistas:['¿Cuántos metros baja la línea cada año?','Baja 50 metros por año. Desde 300 en 2026, sigan: 2027 → ?','2027: 250 metros. 2028: …'],
+      bien:{q:'humbi', t:'¡En 2028! Hay que actuar ya.'},
+      modelo:'Baja 50 por año: 300, 250, 200 → 2028.', resumen:'Llegaría al punto crítico en 2028.'},
+     {id:'t42a', tarea:'4.2a', curcio:4, tipo:'multi', sesgo:['acepta_conclusion'],
+      visual:{tipo:'lineas', titulo:'¡Mi fábrica limpia la playa!', yTitle:'Kilos de basura', labels:['Febrero','Abril','Junio','Agosto'], values:[90,60,40,30], yMax:100, step:10, color:'#c0392b', fuente:'Datos: Empresa Plasticón S.A. Medido un solo día de cada mes, en un solo punto de la playa.'},
+      voz:{q:'plasticon', t:'¡Mi fábrica abrió en febrero y la basura bajó de 90 a 30 kilos! ¡Mi fábrica limpia la playa!'},
+      texto:'¿Por qué la conclusión del Capitán es tramposa? Marquen TODAS las correctas.',
+      opciones:['Compara febrero (playa llena) con agosto (playa vacía).', 'Lo midió su propia empresa, un día al mes y en un solo punto.', 'Que la basura baje no prueba que la fábrica la limpie.', 'El gráfico está perfecto: si baja, la fábrica limpia.'],
+      respuesta:['Compara febrero (playa llena) con agosto (playa vacía).', 'Lo midió su propia empresa, un día al mes y en un solo punto.', 'Que la basura baje no prueba que la fábrica la limpie.'],
+      fb:{'El gráfico está perfecto: si baja, la fábrica limpia.':['¡Eso es justo lo que el Capitán quiere que piensen! Que dos cosas pasen al mismo tiempo no significa que una cause la otra.','acepta_conclusion']},
+      pistas:['Piensen: ¿en qué mes hay más gente en la playa, febrero o agosto?','Lean la letra chica bajo el gráfico: ¿quién midió?, ¿cuántas veces?, ¿dónde?','¿Que la basura baje prueba que fue gracias a la fábrica? ¿Podría haber otra razón?'],
+      bien:{q:'humbi', t:'¡Lo desenmascararon! Encontraron las tres trampas.'},
+      modelo:'Compara verano con invierno, mide su propia empresa en un solo punto y confunde «pasar al mismo tiempo» con «causar».', resumen:'Encontraron las tres trampas del Capitán.'},
+     {id:'t42b', tarea:'4.2b', curcio:4, tipo:'armar', sesgo:['dato_aislado'],
+      visual:{tipo:'lineas', titulo:'¡Mi fábrica limpia la playa!', yTitle:'Kilos de basura', labels:['Febrero','Abril','Junio','Agosto'], values:[90,60,40,30], yMax:100, step:10, color:'#c0392b', fuente:'Datos: Empresa Plasticón S.A. Medido un solo día de cada mes, en un solo punto de la playa.'},
+      voz:{q:'humbi', t:'Ahora completen un mensaje para el Capitán Plasticón.'},
+      texto:'Elijan la frase que completa su mensaje.',
+      partes:[{inicio:'Capitán, su gráfico no nos convence. Para creerle, necesitamos datos…', opciones:['de los mismos meses en varios años.','medidos por otras personas.','solo de agosto.']}],
+      fb:{'solo de agosto.':['Con un solo mes no se puede comparar. ¿Qué datos harían justa la comparación?','dato_aislado']},
+      pistas:['Piensen qué datos harían justa la comparación: ¿quién mide?, ¿cuándo?'],
+      bien:{q:'plasticon', t:'¡Rayos! Está bien… publicaré todos mis datos.'},
+      modelo:'Sirven las dos primeras: datos de los mismos meses en varios años, o medidos por otras personas.', resumen:'Completaron su mensaje al Capitán Plasticón.'}
+   ]}
+];
+
+/* COMPUERTAS: la compuerta i abre la playa i (i = 1..3).
+   Primero el ACERTIJO (presenta en pequeño la representación de la playa siguiente) y después el COMPROMISO:
+   el equipo lee qué causaba el daño en la playa anterior y elige una acción para cuidar la costa. */
+const COMPUERTAS = [
+  null,
+  {id:'c1', nombre:'Compuerta a Cartagena', puente:'De la tabla al pictograma (la clave)',
+   caso:{descubrimiento:'La basura viene de la ciudad: lo que no se recicla queda en la calle y la lluvia lo arrastra al mar.',
+     plasticon:'Plasticón culpaba a los barcos.',
+     cadena:['Basura en la calle','Lluvia','Alcantarillas y esteros','Mar'],
+     voz:{q:'lucas', t:'¡Lo descubrieron! Elijan un compromiso para abrir la compuerta.'},
+     compromisos:['Separar botellas y latas para reciclarlas.','Llevar una botella reutilizable al colegio.','No dejar basura en la calle ni en la playa.'],
+     cierre:{q:'lucas', t:'¡Trato hecho! Así la basura no llega a mi mar.'}},
+   pregunta:{id:'c1q', tarea:'C1', curcio:1, tipo:'opcion', rapida:true,
+     visual:{tipo:'picto', titulo:'Gaviotas vistas en la terraza', simbolo:'gaviota', vale:2, unidad:'gaviotas', filas:[['Lunes',3],['Martes',4]]},
+     voz:{q:'peli', t:'Para llegar a Cartagena, aprendan a leer pictogramas.'},
+     texto:'Miren la clave: ¿cuántas gaviotas vale cada dibujo?',
+     opciones:['1 gaviota','2 gaviotas','4 gaviotas'], respuesta:'2 gaviotas',
+     fb:{'1 gaviota':['Miren la clave bajo el pictograma: ahí dice cuánto vale cada dibujo.','escala_picto'],'4 gaviotas':['4 es la cantidad de dibujos del martes. La clave dice cuánto vale cada uno.','escala_picto']},
+     pistas:['Busquen el recuadro «Clave» bajo el pictograma.'],
+     bien:{q:'peli', t:'¡Eso! En un pictograma, siempre miren la clave.'},
+     modelo:'Clave: 1 dibujo = 2 gaviotas.'}},
+  {id:'c2', nombre:'Compuerta a El Quisco', puente:'Del pictograma al gráfico de barras (la barra más alta)',
+   caso:{descubrimiento:'El mar avanza porque se destruyen las dunas, el escudo de la playa, y las marejadas son más fuertes.',
+     plasticon:'Plasticón culpaba a los sacos de arena.',
+     cadena:['Dunas destruidas','Marejada','Nada frena al mar','Playa más chica'],
+     voz:{q:'gabi', t:'¡Lo descubrieron! Elijan un compromiso para abrir la compuerta.'},
+     compromisos:['Caminar por las pasarelas y no por encima de las dunas.','No sacar arena de la playa.','Cuidar las plantas de las dunas.'],
+     cierre:{q:'gabi', t:'¡Trato hecho! Así las dunas protegen la playa.'}},
+   pregunta:{id:'c2q', tarea:'C2', curcio:1, tipo:'opcion', rapida:true,
+     visual:{tipo:'barras', titulo:'Camiones aljibe que llegaron a El Quisco', yTitle:'Camiones', labels:['Lunes','Martes','Miércoles','Jueves'], values:[3,5,4,6], yMax:7, step:1},
+     voz:{q:'peli', t:'Antes de El Quisco: un gráfico de barras.'},
+     texto:'¿Qué día llegaron MÁS camiones aljibe?',
+     opciones:['Lunes','Martes','Jueves'], respuesta:'Jueves',
+     fb:{'Lunes':['El lunes es la barra más baja. Busquen la más alta.','fila_columna'],'Martes':['El martes llegaron 5. ¿Hay alguna barra más alta?','fila_columna']},
+     pistas:['La barra más alta es la del día con más camiones.'],
+     bien:{q:'peli', t:'¡Eso! La barra más alta muestra el valor mayor.'},
+     modelo:'La barra del jueves llega a 6, la más alta.'}},
+  {id:'c3', nombre:'Compuerta a Algarrobo', puente:'De las barras al gráfico de líneas (si sube o baja)',
+   caso:{descubrimiento:'En verano llega mucha gente y se usa y derrocha más agua, justo cuando llueve menos.',
+     plasticon:'Plasticón culpaba a los camiones aljibe.',
+     cadena:['Llueve menos','Más gente en verano','Más agua usada y derrochada','No alcanza'],
+     voz:{q:'juana', t:'¡Lo descubrieron! Elijan un compromiso para abrir la compuerta.'},
+     compromisos:['Ducharse en 5 minutos.','Cerrar la llave mientras se lavan los dientes.','Avisar a una persona adulta si una llave gotea.'],
+     cierre:{q:'juana', t:'¡Trato hecho! Cada gota cuenta.'}},
+   pregunta:{id:'c3q', tarea:'C3', curcio:2, tipo:'opcion', rapida:true,
+     visual:{tipo:'lineas', titulo:'Pingüinos vistos desde la costanera', yTitle:'Pingüinos', labels:['Semana 1','Semana 2','Semana 3'], values:[24,20,16], yMax:30, step:5},
+     voz:{q:'peli', t:'Para llegar a Algarrobo: un gráfico de líneas.'},
+     texto:'¿Qué pasa con los pingüinos semana a semana?',
+     opciones:['Hay cada vez menos','Hay cada vez más','Siempre hay los mismos'], respuesta:'Hay cada vez menos',
+     fb:{'Hay cada vez más':['Recorran la línea con el dedo de izquierda a derecha: ¿sube o baja?','tendencia_invertida'],'Siempre hay los mismos':['Lean los puntos: 24, 20, 16. ¿Son iguales?','tendencia_invertida']},
+     pistas:['Recorran la línea con el dedo de izquierda a derecha.'],
+     bien:{q:'peli', t:'¡Eso! Si la línea baja, la cantidad disminuye.'},
+     modelo:'24, 20, 16: la línea baja, hay cada vez menos.'}}
+];
+
+const INSIGNIAS = [
+  {id:'tablas', nombre:'Rastro de la basura', sprite:'reciclaje'},
+  {id:'clave', nombre:'Escudo de dunas', sprite:'balde'},
+  {id:'agua', nombre:'Gota que cuenta', sprite:'gota'},
+  {id:'detective', nombre:'Lupa contra trampas', sprite:'lupa'},
+  {id:'meconozco', nombre:'Me conozco', sprite:'estrella'},
+  {id:'guardian', nombre:'Detectives de Datos de la Costa', sprite:'pinguino'}
+];
+/* DATOS-FIN */
+
+/* Todas las tareas en orden de recorrido (para el resumen) */
+const TAREAS = [];
+ZONAS.forEach((z, i) => {
+  if(i > 0){ const c = COMPUERTAS[i]; TAREAS.push(Object.assign({lugar:c.id, lugarNombre:c.nombre, esCompuerta:true}, c.pregunta)); }
+  z.preguntas.forEach(p => TAREAS.push(Object.assign({lugar:z.id, lugarNombre:z.nombre, esCompuerta:false}, p)));
+});
+const tareaPorId = id => TAREAS.find(t => t.id === id);
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+const estadoInicial = () => ({ equipo:{nombre:'', integrantes:['','','','']}, animo:'', inicio:'', fin:'', hechas:{}, zonasHechas:{}, compuertas:{}, casos:{}, insignias:{}, calibracion:{coincide:0,total:0}, tiempo:{}, nEquipos:CONFIG.equiposPorDefecto, otrasZonas:0, registro:[] });
+let E = estadoInicial();
+function cargar(){ try{ const t = localStorage.getItem(CONFIG.clave); if(t) E = Object.assign(estadoInicial(), JSON.parse(t)); }catch(e){} }
+function guardar(){ try{ localStorage.setItem(CONFIG.clave, JSON.stringify(E)); }catch(e){} }
+function registrar(d){ E.registro.push(Object.assign({fecha_hora:ahora(), equipo:E.equipo.nombre || 'sin nombre', animo:E.animo}, d)); guardar(); }
+
+/* =========================================================
+   TABLAS Y GRÁFICOS
+   ========================================================= */
+const FUENTE_MONO = 'ui-monospace,Consolas,Courier New,monospace';
+const tamTitulo = (txt, ancho) => Math.min(16, Math.floor(ancho / (String(txt).length * 0.62) * 10) / 10);
+function titulo(d, L, W){ return d.titulo ? `<text x="${L}" y="22" font-size="${tamTitulo(d.titulo, (W || 540) - L - 8)}" font-weight="800" fill="#1e2b37" font-family="${FUENTE_MONO}">${esc(d.titulo)}</text>` : ''; }
+function tituloY(d, T, ph){ return d.yTitle ? `<text x="14" y="${T+ph/2}" font-size="13" fill="#55687a" transform="rotate(-90 14 ${T+ph/2})" text-anchor="middle">${esc(d.yTitle)}</text>` : ''; }
+function rejilla(L, W, R, y, yMin, yMax, step){ let g = ''; for(let v = yMin; v <= yMax + 1e-9; v += step){ g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#d6d0c2"/><text x="${L-8}" y="${y(v)+5}" text-anchor="end" font-size="15" fill="#55687a">${v}</text>`; } return g; }
+function lineaRef(ref, L, W, R, y){ if(!ref) return ''; const yy = y(ref.valor), w = ref.texto.length * 7.4 + 14; return `<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#c0392b" stroke-width="3" stroke-dasharray="10 6"/><rect x="${L+6}" y="${yy-22}" width="${w}" height="19" fill="#fff" stroke="#c0392b" stroke-width="1.5"/><text x="${L+6+w/2}" y="${yy-8}" text-anchor="middle" font-size="13" font-weight="800" fill="#c0392b">${esc(ref.texto)}</text>`; }
+function ejes(L, T, W, R, y0){ return `<rect x="${L-2}" y="${T}" width="3" height="${y0-T}" fill="#1e2b37"/><rect x="${L-2}" y="${y0}" width="${W-R-L+2}" height="3" fill="#1e2b37"/>`; }
+
+function svgBarras(d, o={}){
+  const W=540, H=320, L=58, R=14, T=38, B=46, yMin = d.yMin || 0, yMax = d.yMax, step = d.step, pw = W-L-R, ph = H-T-B, n = d.labels.length;
+  const y = v => T + ph - (v - yMin) / (yMax - yMin) * ph, color = d.color || o.color || '#2f7fc4';
+  const band = pw / n, bw = Math.min(band * 0.6, 90), uh = ph / (yMax - yMin);
+  let bars = '';
+  d.labels.forEach((lab, i) => {
+    const x = L + i*band + (band-bw)/2, v = d.values[i], base = y(yMin);
+    if(v != null){
+      if(uh >= 7 && (yMax - yMin) <= 15){
+        for(let k = 0; k < Math.round(v - yMin); k++){ const by = base - (k+1)*uh; bars += `<rect x="${x}" y="${by+1}" width="${bw}" height="${uh-2}" fill="${color}"/><rect x="${x}" y="${by+1}" width="${bw}" height="3" fill="rgba(255,255,255,.35)"/><rect x="${x+bw-4}" y="${by+1}" width="4" height="${uh-2}" fill="rgba(0,0,0,.18)"/>`; }
+      } else {
+        const top = y(v); bars += `<rect x="${x}" y="${top}" width="${bw}" height="${base-top}" fill="${color}"/><rect x="${x}" y="${top}" width="${bw}" height="4" fill="rgba(255,255,255,.35)"/>`;
+      }
+    }
+    bars += `<text x="${x+bw/2}" y="${H-B+22}" text-anchor="middle" font-size="15" fill="#1e2b37">${esc(lab)}</text>`;
+  });
+  return `<svg class="chart px" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.titulo||'Gráfico de barras')}">${titulo(d,L,W)}${tituloY(d,T,ph)}${rejilla(L,W,R,y,yMin,yMax,step)}${bars}${lineaRef(d.ref,L,W,R,y)}${ejes(L,T,W,R,y(yMin))}</svg>`;
+}
+function svgAgrupadas(d){
+  const W=540, H=340, L=58, R=14, T=62, B=46, yMax = d.yMax, step = d.step, pw = W-L-R, ph = H-T-B, n = d.labels.length, m = d.series.length;
+  const y = v => T + ph - v / yMax * ph;
+  const band = pw / n, bw = Math.min(band * 0.78 / m, 46), gw = bw * m;
+  let bars = '';
+  d.labels.forEach((lab, i) => {
+    const x0 = L + i*band + (band - gw)/2; let vacio = true;
+    d.series.forEach((s, k) => {
+      const v = s.values[i]; if(v == null) return; vacio = false;
+      const x = x0 + k*bw, top = y(v), base = y(0);
+      bars += `<rect x="${x+1}" y="${top}" width="${bw-2}" height="${base-top}" fill="${s.color}" stroke="#1e2b37" stroke-width="1.5"/><rect x="${x+1}" y="${top}" width="${bw-2}" height="4" fill="rgba(255,255,255,.4)"/>`;
+    });
+    if(vacio) bars += `<rect x="${x0}" y="${T+ph*0.35}" width="${gw}" height="${ph*0.65}" fill="none" stroke="#8d9096" stroke-width="2" stroke-dasharray="6 5"/><text x="${x0+gw/2}" y="${T+ph*0.6}" text-anchor="middle" font-size="34" font-weight="900" fill="#8d9096">?</text>`;
+    bars += `<text x="${L + i*band + band/2}" y="${H-B+22}" text-anchor="middle" font-size="15" fill="#1e2b37" font-weight="${vacio?800:400}">${esc(lab)}</text>`;
+  });
+  let ley = '', lx = L;
+  d.series.forEach(s => { ley += `<rect x="${lx}" y="32" width="16" height="16" fill="${s.color}" stroke="#1e2b37" stroke-width="1.5"/><text x="${lx+22}" y="45" font-size="14" fill="#1e2b37">${esc(s.nombre)}</text>`; lx += 30 + s.nombre.length * 7.6; });
+  return `<svg class="chart px" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.titulo)}: gráfico de barras agrupadas">${titulo(d,L,W)}${ley}${tituloY(d,T,ph)}${rejilla(L,W,R,y,0,yMax,step)}${bars}${lineaRef(d.ref,L,W,R,y)}${ejes(L,T,W,R,y(0))}</svg>`;
+}
+function svgLineas(d, o={}){
+  const W=540, H=320, L=62, R=20, T=38, B=46, yMax = d.yMax, step = d.step, pw = W-L-R, ph = H-T-B, n = d.labels.length;
+  const y = v => T + ph - v / yMax * ph, x = i => L + (i + 0.5) * pw / n, color = d.color || o.color || '#2e8a7a';
+  const pts = d.values.map((v,i) => v == null ? null : `${x(i)},${y(v)}`).filter(Boolean).join(' ');
+  let m = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="square"/>`;
+  d.values.forEach((v,i) => {
+    if(v != null) m += `<rect x="${x(i)-7}" y="${y(v)-7}" width="14" height="14" fill="${color}" stroke="#1e2b37" stroke-width="2"/>`;
+    else m += `<text x="${x(i)}" y="${T+ph-12}" text-anchor="middle" font-size="20" font-weight="900" fill="#8d9096">?</text>`;
+    m += `<text x="${x(i)}" y="${H-B+22}" text-anchor="middle" font-size="${n > 6 ? 13 : 15}" fill="${v == null ? '#55687a' : '#1e2b37'}" font-weight="${v == null ? 800 : 400}">${esc(d.labels[i])}</text>`;
+  });
+  return `<svg class="chart px" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.titulo||'Gráfico de líneas')}">${titulo(d,L,W)}${tituloY(d,T,ph)}${rejilla(L,W,R,y,0,yMax,step)}${lineaRef(d.ref,L,W,R,y)}${m}${ejes(L,T,W,R,y(0))}</svg>`;
+}
+let uidClip = 0;
+function svgPicto(d){
+  const s = 3, sw = anchoSprite(d.simbolo) * s, sh = SPRITES[d.simbolo].length * s, gap = 8, rowH = Math.max(44, sh + 14), L = 180, top = 40;
+  const maxN = Math.max(...d.filas.map(f => typeof f[1] === 'number' ? f[1] : 1));
+  const W = Math.max(520, L + Math.ceil(maxN) * (sw + gap) + 20), H = top + d.filas.length * rowH + 56;
+  let out = `<text x="10" y="22" font-size="${tamTitulo(d.titulo, W - 20)}" font-weight="800" fill="#1e2b37" font-family="${FUENTE_MONO}">${esc(d.titulo)}</text>`;
+  d.filas.forEach(([lab, n], i) => {
+    const yy = top + i * rowH;
+    out += `<rect x="6" y="${yy}" width="${W-12}" height="${rowH-4}" fill="${i % 2 ? '#fffdf7' : '#f6f1e3'}"/><text x="14" y="${yy + rowH/2 + 3}" font-size="15" fill="#1e2b37">${esc(lab)}</text><rect x="${L-10}" y="${yy}" width="2" height="${rowH-4}" fill="#c9c2b3"/>`;
+    if(typeof n !== 'number'){ out += `<rect x="${L}" y="${yy+5}" width="${sw*2+gap}" height="${rowH-14}" fill="none" stroke="#8d9096" stroke-width="2" stroke-dasharray="5 4"/><text x="${L + sw + gap/2}" y="${yy + rowH/2 + 8}" text-anchor="middle" font-size="24" font-weight="900" fill="#8d9096">?</text>`; return; }
+    const enteros = Math.floor(n), medio = n - enteros >= 0.5, sy = yy + (rowH - 4 - sh)/2;
+    for(let k = 0; k < enteros; k++) out += sprite(d.simbolo, L + k*(sw+gap), sy, s);
+    if(medio){ const id = 'mitad' + (++uidClip), xx = L + enteros*(sw+gap); out += `<clipPath id="${id}"><rect x="${xx}" y="${sy}" width="${sw/2}" height="${sh}"/></clipPath><g clip-path="url(#${id})">${sprite(d.simbolo, xx, sy, s)}</g>`; }
+  });
+  const ky = top + d.filas.length * rowH + 14;
+  out += `<rect x="6" y="${ky}" width="${sw + 230}" height="${sh + 12}" fill="#fff4d6" stroke="#b38300" stroke-width="2" stroke-dasharray="5 3"/><text x="16" y="${ky + sh/2 + 11}" font-size="15" font-weight="800" fill="#1e2b37">Clave:</text>${sprite(d.simbolo, 74, ky + 6, s)}<text x="${84 + sw}" y="${ky + sh/2 + 11}" font-size="15" font-weight="800" fill="#1e2b37">= ${d.vale} ${esc(d.unidad)}</text>`;
+  return `<svg class="chart px" viewBox="0 0 ${W} ${H}" role="img" aria-label="Pictograma: ${esc(d.titulo)}. Clave: 1 símbolo = ${d.vale} ${esc(d.unidad)}">${out}</svg>`;
+}
+function palotes(n){
+  const g = Math.floor(n/5), r = n % 5; let s = '', x = 6;
+  const pal = xx => `<rect x="${xx}" y="4" width="3" height="22" fill="#1e2b37"/>`;
+  for(let i = 0; i < g; i++){ for(let k = 0; k < 4; k++) s += pal(x + k*7); s += `<line x1="${x-4}" y1="22" x2="${x+26}" y2="8" stroke="#c0392b" stroke-width="3"/>`; x += 40; }
+  for(let k = 0; k < r; k++) s += pal(x + k*7);
+  const w = x + r*7 + 6;
+  return `<svg width="${w}" height="30" viewBox="0 0 ${w} 30" role="img" aria-label="${n} palotes">${s}</svg>`;
+}
+function visual(v, o={}){
+  if(!v) return '';
+  if(v.tipo === 'conteo') return `<div class="tabla-wrap"><table class="datos"><caption>${esc(v.titulo)}</caption><thead><tr><th>${esc(v.enc[0])}</th><th>${esc(v.enc[1])}</th></tr></thead><tbody>${v.filas.map(([l,n]) => `<tr><th scope="row">${esc(l)}</th><td class="palotes">${palotes(n)}</td></tr>`).join('')}</tbody></table></div>`;
+  if(v.tipo === 'tabla') return `<div class="tabla-wrap"><table class="datos"><caption>${esc(v.titulo)}</caption><thead><tr>${v.enc.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${v.filas.map(f => `<tr>${f.map((c,i) => i ? `<td class="num">${esc(c)}</td>` : `<th scope="row">${esc(c)}</th>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  if(v.tipo === 'picto') return svgPicto(v);
+  if(v.tipo === 'barras') return svgBarras(v, o);
+  if(v.tipo === 'agrupadas') return svgAgrupadas(v);
+  if(v.tipo === 'lineas') return svgLineas(v, o);
+  return '';
+}
+const NOMBRE_VISUAL = {conteo:'Tabla de conteo', tabla:'Tabla de doble entrada', picto:'Pictograma', barras:'Gráfico de barras', agrupadas:'Gráfico de barras agrupadas', lineas:'Gráfico de líneas'};
+
+/* =========================================================
+   FARO COLECTIVO
+   ========================================================= */
+function faroSVG(total, llenos, ancho){
+  const cols = 3, filas = Math.ceil(total / cols), s = 22, W = cols*s + 40, H = filas*s + 70;
+  let out = `<rect x="0" y="${H-14}" width="${W}" height="14" fill="#2c3038"/>`, idx = 0;
+  for(let f = 0; f < filas; f++) for(let c = 0; c < cols; c++){
+    if(idx >= total) break;
+    const x = 20 + c*s, y = H - 14 - (f+1)*s, ll = idx < llenos;
+    out += `<rect x="${x+1}" y="${y+1}" width="${s-2}" height="${s-2}" fill="${ll ? (f % 2 ? '#ffffff' : '#c0392b') : 'none'}" stroke="${ll?'#1e1e1e':'#8d9096'}" stroke-width="2" ${ll?'':'stroke-dasharray="3 3"'}/>`; idx++;
+  }
+  const topY = H - 14 - filas*s, ok = llenos >= total;
+  out += `<rect x="14" y="${topY-8}" width="${cols*s+12}" height="8" fill="#1e1e1e"/><rect x="${20+s/2}" y="${topY-36}" width="${2*s}" height="28" fill="${ok?'#f2c335':'#c9ced4'}" stroke="#1e1e1e" stroke-width="3"/><rect x="${20+s/2-4}" y="${topY-46}" width="${2*s+8}" height="10" fill="#1e1e1e"/>`;
+  if(ok) out += `<rect x="0" y="${topY-30}" width="14" height="6" fill="#f2c335"/><rect x="${W-14}" y="${topY-30}" width="14" height="6" fill="#f2c335"/>`;
+  return `<svg class="px" viewBox="0 ${topY-50} ${W} ${H-topY+50}" width="${ancho||90}" role="img" aria-label="Faro con ${llenos} de ${total} bloques">${out}</svg>`;
+}
+const faroDatos = () => { const total = ZONAS.length * Math.max(1, Number(E.nEquipos) || 1), propias = Object.keys(E.zonasHechas).length; return {total, propias, llenos:Math.min(total, propias + (Number(E.otrasZonas) || 0))}; };
+
+/* =========================================================
+   FONDO ANIMADO (portada y equipo)
+   ========================================================= */
+const F = { cv: $('#cvFondo'), ctx:null, w:0, h:0, fondo:null, raf:0, t0:0, nubes:[], aves:[], botes:[] };
+function tamFondo(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = window.innerWidth, h = window.innerHeight;
+  F.cv.width = Math.round(w*dpr); F.cv.height = Math.round(h*dpr);
+  F.ctx = F.cv.getContext('2d'); F.ctx.setTransform(dpr,0,0,dpr,0,0); F.ctx.imageSmoothingEnabled = false;
+  F.w = w; F.h = h; F.hz = Math.round(h*0.5); F.costa = Math.round(h*0.76); F.bl = Math.max(6, Math.round(Math.min(w, 1100) / 100));
+  F.u = Math.max(2, Math.min(5, Math.min(w, h*1.3) / 200));
+  const c = document.createElement('canvas'); c.width = F.cv.width; c.height = F.cv.height;
+  const x = c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  const g = x.createLinearGradient(0,0,0,F.hz); g.addColorStop(0,'#4fa8e8'); g.addColorStop(1,'#d6f0ff'); x.fillStyle = g; x.fillRect(0,0,w,F.hz);
+  const ss = Math.max(28, Math.min(w,h)*0.07); x.fillStyle = '#ffe066'; x.fillRect(w*0.82, h*0.07, ss, ss); x.fillStyle = '#fff3b0'; x.fillRect(w*0.82+ss*0.2, h*0.07+ss*0.2, ss*0.6, ss*0.6);
+  const rnd = mulberry32(7), bl = F.bl; let alt = bl*3;
+  for(let xx = 0; xx < w + bl; xx += bl){
+    alt += (rnd() - 0.48) * bl * 1.4; alt = Math.max(bl*2, Math.min(F.hz*0.32, alt));
+    const filas = Math.round(alt / bl);
+    for(let f = 0; f < filas; f++){ const v = rnd(); x.fillStyle = f > filas - 2 ? (v < .6 ? '#6cbd45' : '#5fae3a') : (v < .5 ? '#7d8a4a' : v < .8 ? '#6f7c40' : '#8a9656'); x.fillRect(xx, F.hz - (f+1)*bl, bl+0.6, bl+0.6); }
+  }
+  for(let yy = F.hz; yy < F.costa; yy += bl){ for(let xx = 0; xx < w; xx += bl){ const v = rnd(); const k = (yy - F.hz) / (F.costa - F.hz); x.fillStyle = v < .5 ? (k < .5 ? '#2f7fc4' : '#2a73b4') : v < .85 ? (k < .5 ? '#3a8bd0' : '#2f7fc4') : '#1f5a91'; x.fillRect(xx, yy, bl+0.6, bl+0.6); } }
+  for(let yy = F.costa; yy < h; yy += bl){ for(let xx = 0; xx < w; xx += bl){ const v = rnd(); x.fillStyle = yy === F.costa ? '#f4e6b8' : v < .55 ? '#e8d49a' : v < .85 ? '#dcc68a' : '#c8ad68'; x.fillRect(xx, yy, bl+0.6, bl+0.6); } }
+  for(let i = 0; i < 30; i++){ x.fillStyle = rnd() < .5 ? '#f2a7b8' : '#ffffff'; const t = 2 + rnd()*3; x.fillRect(rnd()*w, F.costa + bl + rnd()*(h - F.costa - bl), t, t); }
+  const u = F.u;
+  F.fondo = c;
+  F.cactus = {x: w*0.86, y: F.costa - u*12*1.6 + bl*2, s: u*1.6};
+  F.nubes = []; const r2 = mulberry32(42);
+  for(let i = 0; i < 5; i++) F.nubes.push({x:r2()*w, y:h*(0.05 + r2()*0.18), w:60 + r2()*90, b:8 + r2()*6, v:6 + r2()*10});
+  F.aves = []; for(let i = 0; i < 4; i++) F.aves.push({x:r2()*w, y:h*(0.12 + r2()*0.25), v:20 + r2()*25, s:u*(0.8 + r2()*0.6), f:r2()*6});
+  F.botes = [{x:w*0.12, y:F.hz + (F.costa-F.hz)*0.35, s:u*1.3, f:0}, {x:w*0.6, y:F.hz + (F.costa-F.hz)*0.6, s:u*1.7, f:2}];
+  F.jaiba = {x:w*0.3, y:h - (h - F.costa)*0.45, s:u*1.2, v:18, dir:1};
+  F.peli = {x:w*0.08, y:F.costa - 16*u*1.4 + bl, s:u*1.4};
+  F.pingu = {x:w*0.72, y:F.costa - 12*u*1.2 + bl, s:u*1.2};
+}
+function cuadroFondo(t){
+  const dt = F.t0 ? Math.min(0.05, (t - F.t0) / 1000) : 0.016; F.t0 = t;
+  const c = F.ctx; if(!c) return;
+  if(!F.fondo || !F.fondo.width || !F.fondo.height){ if(F.w === 0 && window.innerWidth > 0) tamFondo(); if(!reducirMov) F.raf = requestAnimationFrame(cuadroFondo); return; }
+  c.drawImage(F.fondo, 0, 0, F.w, F.h);
+  for(const n of F.nubes){ n.x += n.v*dt; if(n.x > F.w + 40) n.x = -n.w - 40; c.fillStyle = 'rgba(255,255,255,.95)'; c.fillRect(n.x, n.y + n.b, n.w, n.b*1.5); c.fillRect(n.x + n.b*1.5, n.y, n.w - n.b*3.5, n.b*1.2); c.fillStyle = 'rgba(214,230,243,.95)'; c.fillRect(n.x, n.y + n.b*2.3, n.w, n.b*0.4); }
+  const bl = F.bl; c.fillStyle = 'rgba(207,239,255,.85)';
+  for(let fila = 0; fila < 6; fila++){ const yy = F.hz + bl*(1 + fila*Math.max(2, Math.floor((F.costa-F.hz)/bl/6))); const off = (t/1000 * (10 + fila*6)) % 160; for(let xx = -160 + off + fila*37; xx < F.w; xx += 160) c.fillRect(Math.round(xx), yy, bl*3, Math.max(2, bl*0.4)); }
+  c.fillStyle = '#ffffff'; for(let xx = 0; xx < F.w; xx += bl*2){ const a = Math.sin(t/600 + xx/40); if(a > 0.3) c.fillRect(xx, F.costa - Math.max(2, bl*0.4), bl*2, Math.max(2, bl*0.4)); }
+  for(const b of F.botes){ b.f += dt*2; dibujarSprite(c, 'bote', b.x, b.y + Math.sin(b.f)*b.s*1.2, b.s); }
+  for(const a of F.aves){ a.x += a.v*dt; a.f += dt*6; if(a.x > F.w + 40) a.x = -40; dibujarSprite(c, Math.sin(a.f) > 0 ? 'ave' : 'ave2', a.x, a.y, a.s); }
+  dibujarSprite(c, 'cactus', F.cactus.x, F.cactus.y, F.cactus.s);
+  dibujarSprite(c, 'peli', F.peli.x, F.peli.y, F.peli.s);
+  dibujarSprite(c, 'pinguino', F.pingu.x, F.pingu.y + (Math.sin(t/300) > 0 ? 0 : 2), F.pingu.s);
+  const j = F.jaiba; j.x += j.v*j.dir*dt; if(j.x > F.w*0.7 || j.x < F.w*0.2) j.dir *= -1; dibujarSprite(c, 'jaiba', j.x, j.y + (Math.sin(t/120) > 0 ? 0 : 1), j.s);
+  if(!reducirMov) F.raf = requestAnimationFrame(cuadroFondo);
+}
+function iniciarFondo(){ tamFondo(); cancelAnimationFrame(F.raf); F.t0 = 0; F.raf = requestAnimationFrame(cuadroFondo); }
+function detenerFondo(){ cancelAnimationFrame(F.raf); F.raf = 0; }
+
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+let profeOk = false;
+function mostrar(id){
+  if((id === 'pResumen' || id === 'pGuia') && !profeOk) id = 'pDocente';
+  if(T && T.tMarca && $('#pTrabajo').classList.contains('activa') && id !== 'pTrabajo') sumarTiempo();
+  $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === id));
+  const conFondo = id === 'pPortada' || id === 'pEquipo';
+  document.body.classList.toggle('con-fondo', conFondo);
+  if(conFondo) iniciarFondo(); else detenerFondo();
+  window.scrollTo(0, 0);
+  if(id === 'pEquipo') pintarEquipo();
+  if(id === 'pMapa') pintarMapa();
+  if(id === 'pDocente') pintarDocente();
+  if(id === 'pResumen') pintarResumen();
+  if(id === 'pGuia') pintarGuia();
+}
+$$('[data-ir]').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.ir)));
+$('#btnComenzar').addEventListener('click', () => mostrar(E.equipo.nombre ? 'pMapa' : 'pEquipo'));
+
+/* =========================================================
+   EQUIPO
+   ========================================================= */
+const MSG_ANIMO = {
+  'con-energia':'¡Bacán! Usen esa energía para explicar sus ideas.',
+  'tranquilo':'Perfecto para pensar con calma.',
+  'nervioso':'Es normal. Aquí no hay nota y pueden pedir pistas cuando quieran. Partan por lo que ya saben.',
+  'cansado':'Gracias por contarlo. Vayan paso a paso: pueden pausar y seguir otro día.'
+};
+function pintarEquipo(){
+  $('#nombreEquipo').value = E.equipo.nombre;
+  const ints = E.equipo.integrantes || [];
+  $('#integrantes').innerHTML = [0,1,2,3].map(i => `<div class="campo"><label for="int${i}">Integrante ${i+1}</label><input id="int${i}" maxlength="25" autocomplete="off" value="${esc(ints[i]||'')}"></div>`).join('');
+  $$('#integrantes input').forEach(x => x.addEventListener('input', validarEquipo));
+  $$('[data-animo]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.animo === E.animo)));
+  const m = $('#msgAnimo'); m.className = 'mensaje' + (E.animo ? ' info' : ''); m.textContent = E.animo ? MSG_ANIMO[E.animo] : '';
+  validarEquipo();
+}
+function validarEquipo(){ $('#btnAlMapa').disabled = !($('#nombreEquipo').value.trim() && E.animo && [0,1,2,3].some(i => $('#int'+i).value.trim())); }
+$('#nombreEquipo').addEventListener('input', validarEquipo);
+$$('[data-animo]').forEach(b => b.addEventListener('click', () => { E.animo = b.dataset.animo; $$('[data-animo]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); const m = $('#msgAnimo'); m.className = 'mensaje info'; m.textContent = MSG_ANIMO[E.animo]; validarEquipo(); }));
+$('#btnAlMapa').addEventListener('click', () => {
+  E.equipo.nombre = $('#nombreEquipo').value.trim();
+  E.equipo.integrantes = [0,1,2,3].map(i => $('#int'+i).value.trim());
+  if(!E.inicio) E.inicio = ahora();
+  registrar({lugar:'inicio', tarea:'', nivel_curcio:'', pregunta:'', tipo:'animo', intento:'', confianza:'', respuesta:E.animo, correcto:'', error:'', sesgo:'', pistas_usadas:'', segundos:''});
+  mostrar('pMapa');
+});
+
+/* =========================================================
+   MAPA
+   ========================================================= */
+const zonaAbierta = i => i === 0 || !!E.compuertas[COMPUERTAS[i].id];
+const compuertaLista = i => !!E.zonasHechas[ZONAS[i-1].id];
+const POS = [{x:40,y:70},{x:290,y:250},{x:540,y:70},{x:790,y:250}];
+const TW = 170, TH = 140;
+function mensajePeli(){
+  if(E.zonasHechas.algarrobo) return `¡Investigación cumplida, equipo ${E.equipo.nombre}! Desenmascararon lo que daña la costa y eligieron cómo ayudar. Llamen a la profe para revisar en equipo su Resumen de Interacciones.`;
+  for(let i = 0; i < ZONAS.length; i++){
+    if(i > 0 && !E.compuertas[COMPUERTAS[i].id]) return compuertaLista(i) ? `¡La ${COMPUERTAS[i].nombre} está lista! Tóquenla: resuelvan el acertijo y elijan su compromiso para abrir el camino.` : '';
+    if(!E.zonasHechas[ZONAS[i].id]) return i === 0 ? '¡Hola, Detectives de Datos! Soy Peli. Algo está dañando la costa y el Capitán Plasticón quiere esconderlo. La investigación parte en el puerto de San Antonio: tóquenlo para entrar.' : `Sigan en ${ZONAS[i].nombre}. Pueden pedir pistas cuando quieran: no pierden nada.`;
+  }
+  return '';
+}
+function pintarMapa(){
+  $('#mapaEquipo').textContent = 'Equipo ' + E.equipo.nombre;
+  $('#peliAv').innerHTML = spriteSVG('peli', 4, 'Peli, el pelícano');
+  $('#peliMsg').textContent = mensajePeli();
+  $('#inv').innerHTML = INSIGNIAS.map(b => `<div class="slot ${E.insignias[b.id]?'':'off'}" title="${esc(b.nombre)}">${spriteSVG(b.sprite, 4, b.nombre)}</div>`).join('');
+  const tiene = INSIGNIAS.filter(b => E.insignias[b.id]).map(b => b.nombre);
+  $('#invTxt').textContent = tiene.length ? tiene.join(' · ') : 'Las insignias muestran lo que ya saben hacer.';
+  const fd = faroDatos();
+  $('#faro').innerHTML = faroSVG(fd.total, fd.llenos, 80);
+  $('#faroTxt').textContent = `${fd.llenos} de ${fd.total} bloques`;
+  $('#faroSub').textContent = fd.llenos >= fd.total ? '¡El faro del curso está encendido!' : `Su equipo puso ${fd.propias}. Cada equipo aporta al mismo faro.`;
+  const comp = COMPUERTAS.filter(c => c && E.casos[c.id]).map(c => E.casos[c.id].compromiso);
+  $('#cajaCompromisos').hidden = !comp.length;
+  $('#listaCompromisos').innerHTML = comp.map(t => `<li>${esc(t)}</li>`).join('');
+  let s = `<rect width="1000" height="560" fill="#9fd36b"/>`;
+  const rnd = mulberry32(3);
+  for(let i = 0; i < 70; i++){ s += `<rect x="${Math.floor(rnd()*50)*20}" y="${Math.floor(rnd()*20)*20}" width="20" height="20" fill="${rnd()<.5?'#8fc85c':'#a8dc74'}"/>`; }
+  s += `<rect y="420" width="1000" height="40" fill="#e8d49a"/><rect y="420" width="1000" height="6" fill="#f4e6b8"/><rect y="460" width="1000" height="100" fill="#2f7fc4"/>`;
+  for(let x = 0; x < 1000; x += 40){ s += `<rect x="${x + (x/40%2)*20}" y="${456 + (x/40%3)*4}" width="20" height="8" fill="#e8d49a"/>`; }
+  s += olas(476, 1000) + olas(510, 1000).replace(/x="(\d+)"/g, (m, a) => `x="${+a+16}"`);
+  s += `<g class="mece">${sprite('bote', 120, 482, 3)}</g><g class="mece" style="animation-delay:-1.2s">${sprite('bote', 640, 500, 3)}</g><g class="mece" style="animation-delay:-.6s">${sprite('pinguino', 880, 490, 2.4)}</g>`;
+  s += `<g class="vuela">${sprite('ave', 0, 30, 3)}</g><g class="vuela" style="animation-delay:-9s;animation-duration:24s">${sprite('ave', 0, 400, 3)}</g>`;
+  s += `<g transform="translate(60,500)"><rect x="-44" y="-12" width="92" height="40" fill="#fffdf7" stroke="#2b3a48" stroke-width="2"/><text x="2" y="5" text-anchor="middle" font-size="12" font-weight="800">SUR ↔ NORTE</text><text x="2" y="21" text-anchor="middle" font-size="10">Litoral central</text></g>`;
+  const centro = i => ({x: POS[i].x + TW/2, y: POS[i].y + TH/2});
+  for(let i = 1; i < ZONAS.length; i++){ const a = centro(i-1), b = centro(i); s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#c8ad68" stroke-width="22"/><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#e8d49a" stroke-width="14" stroke-dasharray="14 6"/>`; }
+  ZONAS.forEach((z, i) => {
+    const p = POS[i], ab = zonaAbierta(i), he = !!E.zonasHechas[z.id], n = z.preguntas.filter(q => E.hechas[q.id]).length;
+    const estado = he ? '✓ Completada' : ab ? `${n}/${z.preguntas.length} tareas` : 'Por descubrir';
+    s += `<g class="nodo ${ab?'':'bloq'}" data-zona="${i}" ${ab?'role="button" tabindex="0"':'aria-disabled="true"'} aria-label="${esc(z.nombre)}: ${esc(estado)}">
+      <g class="marco"><rect x="${p.x+4}" y="${p.y+6}" width="${TW}" height="${TH}" rx="6" fill="#2b3a48"/>
+      <rect x="${p.x}" y="${p.y}" width="${TW}" height="${TH}" rx="6" fill="#fffdf7" stroke="#2b3a48" stroke-width="3"/>
+      <svg x="${p.x+3}" y="${p.y+3}" width="${TW-6}" height="64" viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice">${escenaInterior(z.escena)}${ab?'':'<rect width="320" height="120" fill="rgba(60,60,60,.55)"/>'}</svg>
+      <rect x="${p.x}" y="${p.y+66}" width="${TW}" height="5" fill="${z.color}"/>
+      <text x="${p.x+10}" y="${p.y+94}" font-size="16" font-weight="800" fill="#1e2b37">${esc(z.nombre)}</text>
+      <text x="${p.x+10}" y="${p.y+113}" font-size="11.5" font-weight="700" fill="${ab?z.color:'#777'}">${esc(z.titulo.split(',')[0])}</text>
+      <text x="${p.x+10}" y="${p.y+131}" font-size="11.5" fill="${he?'#1f8a44':'#55687a'}" font-weight="${he?800:500}">${esc(estado)}</text>
+      ${ab?'':`<g transform="translate(${p.x+TW/2-15},${p.y+12})">${sprite('candado',0,0,3)}</g>`}</g></g>`;
+  });
+  for(let i = 1; i < ZONAS.length; i++){
+    const a = centro(i-1), b = centro(i), mx = (a.x+b.x)/2, my = (a.y+b.y)/2, c = COMPUERTAS[i], ab = !!E.compuertas[c.id], li = compuertaLista(i);
+    let muro = '';
+    for(let f = 0; f < 3; f++) for(let k = 0; k < 4; k++){ const pilar = k === 0 || k === 3; if(ab && !pilar) continue; muro += `<rect x="${mx-36+k*18}" y="${my-27+f*18}" width="17" height="17" fill="${pilar?'#8d9096':'#9a9da3'}" stroke="#5e6167" stroke-width="2"/>`; }
+    s += `<g class="nodo ${li && !ab ? 'compuerta-lista' : (!li && !ab ? 'bloq' : '')}" data-gate="${i}" ${li?'role="button" tabindex="0"':'aria-disabled="true"'} aria-label="${c.nombre}: ${ab?'abierta':li?'lista para abrir':'cerrada'}">
+      ${li && !ab ? `<rect class="brillo" x="${mx-46}" y="${my-37}" width="92" height="74" rx="8" fill="#f2b200"/>` : ''}
+      ${muro}${ab ? '' : `<g transform="translate(${mx-12},${my-14})">${sprite('candado',0,0,2.4)}</g>`}
+      <rect x="${mx-44}" y="${my+30}" width="88" height="18" rx="4" fill="#fffdf7" stroke="#2b3a48" stroke-width="2"/><text x="${mx}" y="${my+43}" text-anchor="middle" font-size="11" font-weight="800">Compuerta</text></g>`;
+  }
+  $('#mapaSvg').innerHTML = `<svg class="mapa-svg" viewBox="0 0 1000 560" role="group" aria-label="Mapa del litoral central">${s}</svg>`;
+  let l = '';
+  ZONAS.forEach((z, i) => {
+    if(i > 0){ const c = COMPUERTAS[i], ab = !!E.compuertas[c.id], li = compuertaLista(i);
+      l += `<div class="item-mov gate ${ab?'abierta':li?'lista':''}"><div style="width:40px">${spriteSVG('candado',4)}</div><div class="txt"><b>${c.nombre}</b><small>${ab?'Abierta':li?'Lista: acertijo y compromiso':'Cerrada: primero terminen ' + esc(ZONAS[i-1].nombre)}</small></div>${li && !ab ? `<button class="btn chico" data-gate="${i}">Abrir</button>` : ''}</div>`; }
+    const ab = zonaAbierta(i), he = !!E.zonasHechas[z.id], n = z.preguntas.filter(q => E.hechas[q.id]).length;
+    l += `<div class="item-mov ${ab?'':'bloq'}" style="border-left:8px solid ${z.color}"><div class="mini px"><svg viewBox="0 0 320 120" width="100%" aria-hidden="true">${escenaInterior(z.escena)}</svg></div><div class="txt"><b>${esc(z.nombre)}</b><small>${he?'✓ Completada':ab?`${n}/${z.preguntas.length} tareas`:'Por descubrir'}</small></div>${ab?`<button class="btn chico" data-zona="${i}">${he?'Ver':'Entrar'}</button>`:''}</div>`;
+  });
+  $('#mapaLista').innerHTML = l;
+  const activar = (el, fn) => { el.addEventListener('click', fn); el.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fn(); } }); };
+  $$('[data-zona]').forEach(el => { const i = +el.dataset.zona; if(zonaAbierta(i)) activar(el, () => abrirTrabajo('zona', i)); });
+  $$('[data-gate]').forEach(el => { const i = +el.dataset.gate; if(compuertaLista(i) && !E.compuertas[COMPUERTAS[i].id]) activar(el, () => abrirTrabajo('compuerta', i)); });
+}
+
+/* =========================================================
+   PANTALLA DE TRABAJO
+   ========================================================= */
+let T = null;
+function actividad(){
+  if(T.tipo === 'zona') return ZONAS[T.idx];
+  const c = COMPUERTAS[T.idx];
+  return {id:c.id, nombre:c.nombre, titulo:c.nombre, color:'#5e6167', preguntas:[c.pregunta], escena:ZONAS[T.idx].escena};
+}
+function abrirTrabajo(tipo, idx){
+  T = {tipo, idx, q:0, fin:false};
+  if(tipo === 'zona'){ const z = ZONAS[idx], q = z.preguntas.findIndex(p => !E.hechas[p.id]); if(q < 0){ T.q = z.preguntas.length - 1; T.fin = true; } else T.q = q; }
+  mostrar('pTrabajo'); pintarTrabajo();
+}
+$('#btnVolverMapa').addEventListener('click', () => mostrar('pMapa'));
+function sumarTiempo(){
+  if(!T || !T.tMarca || T.fin) return 0;
+  const p = actividad().preguntas[T.q], now = Date.now(), d = Math.min(600, Math.max(0, (now - T.tMarca) / 1000));
+  if(!T.resuelta) E.tiempo[p.id] = Math.round(((E.tiempo[p.id] || 0) + d) * 10) / 10;
+  T.tMarca = now; guardar();
+  return Math.round(E.tiempo[p.id] || 0);
+}
+function pintarPasos(){
+  const a = actividad();
+  $('#tituloTrabajo').innerHTML = T.tipo === 'compuerta' ? `${esc(a.nombre)}<small>${compromisoPendiente() ? 'Compromiso para abrir el camino' : 'Acertijo para abrir el camino'}</small>` : `${esc(a.nombre)}: ${esc(a.titulo)}`;
+  $('#pasos').innerHTML = T.tipo === 'zona' ? a.preguntas.map((p, i) => `<span class="paso ${E.hechas[p.id]?'hecho':''} ${i===T.q && !T.fin && !E.hechas[p.id]?'en-curso':''}" title="Tarea ${p.tarea}">${E.hechas[p.id]?'✓':p.tarea}</span>`).join('') : '';
+}
+function pintarTrabajo(){
+  if(compromisoPendiente()){ pintarCompromiso(); return; }
+  const a = actividad(), p = a.preguntas[T.q];
+  Object.assign(T, {confianza:'', intentos:0, pistas:0, resuelta:!!E.hechas[p.id] && T.fin, opcion:'', multi:new Set(), armado:[], tMarca:Date.now()});
+  T.intentos = E.registro.filter(r => r.pregunta === p.id && (r.correcto === 0 || r.correcto === 1 || r.tipo === 'explicar')).length;
+  pintarPasos();
+  pintarIzquierda(a, p);
+  pintarDerecha(a, p);
+  $('#izq').scrollTop = 0; $('#der').scrollTop = 0;
+}
+function pintarIzquierda(a, p){
+  const top = T.tipo === 'zona' ? banda(a.escena) : gateArt(a);
+  const nota = p.visual.fuente ? `<p class="fuente">${esc(p.visual.fuente)}</p><p class="nota">Personaje y datos inventados para el juego.</p>` : '<p class="nota">Lugares reales, datos inventados para el juego.</p>';
+  $('#izq').innerHTML = top + `<div class="tarjeta graf-card">${visual(p.visual, {color:a.color})}${nota}</div>`;
+}
+function gateArt(a){
+  let muro = '';
+  for(let f = 0; f < 6; f++) for(let k = 0; k < 16; k++){
+    const puerta = k >= 6 && k <= 9 && f >= 1;
+    if(puerta) continue;
+    const v = (f*7 + k*3) % 5;
+    muro += `<rect x="${k*20}" y="${f*20}" width="20" height="20" fill="${v<2?'#8d9096':v<4?'#9a9da3':'#7f8389'}" stroke="#5e6167" stroke-width="2"/>`;
+  }
+  let puertas = '';
+  for(let f = 1; f < 6; f++) for(let k = 6; k <= 9; k++) puertas += `<rect x="${k*20}" y="${f*20}" width="20" height="20" fill="${(f+k)%2?'#6b4423':'#7d5530'}" stroke="#4a2f17" stroke-width="2"/>`;
+  return `<div class="banda px"><svg class="gate-art" id="gateArt" viewBox="0 0 320 120" preserveAspectRatio="xMidYMid meet" style="height:120px;background:#a7dcf7" role="img" aria-label="${esc(a.nombre)}">
+    ${escenaInterior(a.escena)}${muro}<g class="puertas">${puertas}</g><g class="candado">${sprite('candado',145,52,3)}</g></svg></div>`;
+}
+function burbuja(v){
+  const P = PERSONAJES[v.q];
+  return `<div class="voz ${P.villano?'villano':''}"><div class="av px">${spriteSVG(P.sprite, 3, P.nombre)}</div><div class="globo"><b>${esc(P.nombre)}</b>${esc(v.t)}</div></div>`;
+}
+function pintarDerecha(a, p){
+  const der = $('#der');
+  if(T.tipo === 'zona' && T.fin){ der.innerHTML = `<div class="tarjeta mision">${resumenHechas(a, a.preguntas.length)}${celebracion(a)}</div>`; enlazarCelebracion(); return; }
+  const usaConf = ['numero','opcion','multi','armar'].includes(p.tipo);
+  const intro = T.tipo === 'zona' && T.q === 0 ? `<div class="dialogo">${a.intro.map(burbuja).join('')}</div>` : '';
+  let resp = '';
+  if(p.tipo === 'numero') resp = `<div class="respuesta"><label for="inpResp"><b>Respuesta:</b></label><input id="inpResp" inputmode="decimal" autocomplete="off" placeholder="Ej: 10"><span>${esc(p.unidad||'')}</span></div>`;
+  else if(p.tipo === 'opcion') resp = `<div class="opciones" role="group" aria-label="Opciones">${p.opciones.map(o => `<button class="opcion" aria-pressed="false" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+  else if(p.tipo === 'multi') resp = `<div class="opciones" role="group" aria-label="Opciones (pueden marcar varias)">${p.opciones.map(o => `<button class="opcion multi" aria-pressed="false" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+  else if(p.tipo === 'armar') resp = p.partes.map((pt, i) => `<p class="inicio-frase"><b>${esc(pt.inicio)}</b></p><div class="opciones" role="group" aria-label="${esc(pt.inicio)}">${pt.opciones.map(o => `<button class="opcion armar-op" aria-pressed="false" data-parte="${i}" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`).join('') + '<div id="vistaMsg" class="pista" hidden></div>';
+  else if(p.tipo === 'explicar') resp = `<p class="nota" style="margin:0">Escriban su mensaje en el recuadro. Pueden partir con una de estas frases:</p><div class="inicios">${p.inicios.map(s => `<button type="button" data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div><textarea id="expl" aria-label="Nuestro mensaje" placeholder="Pueden partir con una de las frases de arriba."></textarea>`;
+  const encabezado = T.tipo === 'zona' ? `<span class="num-mision">Tarea ${esc(p.tarea)} <small>· ${T.q+1} de ${a.preguntas.length}</small></span>` : `<span class="num-mision">Acertijo para abrir el camino a ${esc(ZONAS[T.idx].nombre)}</span>`;
+  der.innerHTML = `<div class="tarjeta mision">${intro}${T.tipo==='zona'?resumenHechas(a, T.q):''}
+    <div class="actual">${encabezado}${p.voz ? burbuja(p.voz) : ''}<p class="pregunta">${esc(p.texto)}</p>${resp}
+      ${usaConf ? `<div class="conf-fila"><span>¿Cuánta confianza tienen en su respuesta?</span><div class="seg" role="group" aria-label="Confianza"><button data-c="poco" aria-pressed="false">Poca</button><button data-c="algo" aria-pressed="false">Algo</button><button data-c="muy" aria-pressed="false">Mucha</button></div></div>` : ''}
+      <div class="acciones">
+        <button class="btn verde" id="btnComprobar" ${usaConf?'disabled':''}>${p.tipo==='explicar'?'Enviar mensaje':'Comprobar'}</button>
+        ${p.pistas ? '<button class="btn sec" id="btnPista">Pedir una pista</button>' : ''}
+        <button class="btn" id="btnSiguiente" hidden>Siguiente →</button>
+      </div>
+      <div id="fb" class="mensaje" role="status" aria-live="polite"></div>
+      <div id="pistas"></div>
+    </div></div>`;
+  $$('.seg button', der).forEach(b => b.addEventListener('click', () => { $$('.seg button', der).forEach(x => x.setAttribute('aria-pressed', String(x === b))); T.confianza = b.dataset.c; $('#btnComprobar').disabled = false; }));
+  $$('.opcion:not(.multi):not(.armar-op)', der).forEach(b => b.addEventListener('click', () => { if(T.resuelta) return; $$('.opcion', der).forEach(x => x.setAttribute('aria-pressed', String(x === b))); T.opcion = b.dataset.o; }));
+  $$('.armar-op', der).forEach(b => b.addEventListener('click', () => {
+    if(T.resuelta) return;
+    const k = +b.dataset.parte; T.armado[k] = b.dataset.o;
+    $$(`.armar-op[data-parte="${k}"]`, der).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    const v = $('#vistaMsg'); v.hidden = false; v.innerHTML = '<b>Su mensaje:</b> ' + esc(mensajeArmado(p));
+  }));
+  $$('.opcion.multi', der).forEach(b => b.addEventListener('click', () => { if(T.resuelta) return; const o = b.dataset.o; if(T.multi.has(o)) T.multi.delete(o); else T.multi.add(o); b.setAttribute('aria-pressed', String(T.multi.has(o))); }));
+  $$('.inicios button', der).forEach(b => b.addEventListener('click', () => { const t = $('#expl'); t.value = (t.value ? t.value.trimEnd() + ' ' : '') + b.dataset.s + ' '; t.focus(); }));
+  const inp = $('#inpResp'); if(inp) inp.addEventListener('keydown', e => { if(e.key === 'Enter' && !$('#btnComprobar').disabled) comprobar(); });
+  if(p.pistas) $('#btnPista').addEventListener('click', pedirPista);
+  $('#btnComprobar').addEventListener('click', comprobar);
+  $('#btnSiguiente').addEventListener('click', siguiente);
+}
+/* =========================================================
+   COMPROMISO DE LAS COMPUERTAS: tras el acertijo, el equipo elige un compromiso y se abre la compuerta
+   ========================================================= */
+function compromisoPendiente(){ if(!T || T.tipo !== 'compuerta') return false; const c = COMPUERTAS[T.idx]; return !!E.hechas[c.pregunta.id] && !E.compuertas[c.id]; }
+function pintarCompromiso(){
+  const c = COMPUERTAS[T.idx], k = c.caso, a = actividad();
+  T.tMarca = 0; T.compInicio = Date.now(); T.compromiso = '';
+  pintarPasos();
+  $('#izq').innerHTML = gateArt(a) + `<div class="tarjeta"><h3 style="margin-top:0">Lo que descubrieron en ${esc(ZONAS[T.idx-1].nombre)}</h3><p style="margin:0">${esc(k.descubrimiento)}</p>
+    <div class="cadena" aria-label="Cómo ocurre el daño">${k.cadena.map(t => `<span>${esc(t)}</span>`).join('<i aria-hidden="true">→</i>')}</div><p class="nota">${esc(k.plasticon)}</p></div>`;
+  $('#der').innerHTML = `<div class="tarjeta mision"><div class="actual"><span class="num-mision">Compromiso para abrir el camino</span>${burbuja(k.voz)}
+    <div class="opciones" role="group" aria-label="Compromiso">${k.compromisos.map(t => `<button class="opcion" aria-pressed="false" data-o="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="acciones"><button class="btn verde" id="btnCompromiso" disabled>Guardar y abrir la compuerta</button></div>
+    <div id="fb" class="mensaje" role="status" aria-live="polite"></div></div></div>`;
+  $$('#der .opcion').forEach(b => b.addEventListener('click', () => { if(E.compuertas[c.id]) return; $$('#der .opcion').forEach(z => z.setAttribute('aria-pressed', String(z === b))); T.compromiso = b.dataset.o; $('#btnCompromiso').disabled = false; }));
+  $('#btnCompromiso').addEventListener('click', guardarCompromiso);
+  $('#izq').scrollTop = 0; $('#der').scrollTop = 0;
+}
+function guardarCompromiso(){
+  const c = COMPUERTAS[T.idx], k = c.caso, t = T.compromiso, z = ZONAS[T.idx];
+  if(!t || E.compuertas[c.id]) return;
+  E.casos[c.id] = {compromiso:t, fecha:ahora()};
+  E.compuertas[c.id] = true;
+  registrar({lugar:c.id, tarea:c.pregunta.tarea + ' compromiso', nivel_curcio:'', pregunta:c.id + 'compromiso', tipo:'compromiso', intento:1, confianza:'', respuesta:t, correcto:'', error:'', sesgo:'', pistas_usadas:'', segundos:Math.round((Date.now() - T.compInicio) / 1000)});
+  registrar({lugar:c.id, tarea:c.pregunta.tarea, nivel_curcio:c.pregunta.curcio, pregunta:'', tipo:'compuerta_abierta', intento:'', confianza:'', respuesta:'', correcto:'', error:'', sesgo:'', pistas_usadas:'', segundos:''});
+  guardar();
+  $$('#der .opcion').forEach(b => b.disabled = true); $('#btnCompromiso').hidden = true;
+  const g = $('#gateArt'); if(g) g.classList.add('abriendo');
+  mensaje('ok', `<p><b>¡${esc(c.nombre)} abierta!</b> El camino a ${esc(z.nombre)} está libre.</p>${burbuja(k.cierre)}<div class="acciones"><button class="btn" id="btnIrZona">Ir a ${esc(z.nombre)} →</button></div>`);
+  $('#btnIrZona').addEventListener('click', () => abrirTrabajo('zona', T.idx));
+}
+function resumenHechas(a, hasta){
+  let h = '';
+  for(let i = 0; i < hasta; i++){ const p = a.preguntas[i]; if(E.hechas[p.id]) h += `<div class="hecha"><b>✓ ${esc(p.tarea)}</b><span>${esc(p.resumen || '')}</span></div>`; }
+  return h;
+}
+function mensaje(clase, html){ const f = $('#fb'); f.className = 'mensaje ' + clase; f.innerHTML = html; f.scrollIntoView({block:'nearest', behavior: reducirMov ? 'auto' : 'smooth'}); }
+function pedirPista(){
+  const a = actividad(), p = a.preguntas[T.q];
+  if(T.pistas >= p.pistas.length) return;
+  T.pistas++;
+  $('#pistas').insertAdjacentHTML('beforeend', `<div class="pista"><b>Pista ${T.pistas}:</b> ${esc(p.pistas[T.pistas-1])}</div>`);
+  if(T.pistas >= p.pistas.length) $('#btnPista').disabled = true;
+  $('#pistas').lastElementChild.scrollIntoView({block:'nearest'});
+  registrar({lugar:a.id, tarea:p.tarea, nivel_curcio:p.curcio, pregunta:p.id, tipo:'pista', intento:T.intentos, confianza:T.confianza, respuesta:'pista ' + T.pistas, correcto:'', error:'', sesgo:'', pistas_usadas:T.pistas, segundos:sumarTiempo()});
+}
+function calibracion(ok){
+  const c = T.confianza; if(!c) return '';
+  const coincide = (ok && c !== 'poco') || (!ok && c !== 'muy');
+  E.calibracion.total++; if(coincide) E.calibracion.coincide++;
+  let extra = '';
+  if(E.calibracion.coincide >= 5 && !E.insignias.meconozco){ E.insignias.meconozco = true; extra = '<p><b>¡Nueva insignia: Me conozco!</b> Su confianza coincide con lo que saben.</p>'; }
+  if(ok && c === 'poco') return '<p>¡Lo lograron aunque dudaban! Saben harto más de lo que creen.</p>' + extra;
+  if(ok && c === 'algo') return '<p>La próxima vez pueden confiar un poco más en lo que ven.</p>' + extra;
+  if(ok) return '<p>Su confianza coincidió con lo que sabían.</p>' + extra;
+  if(c === 'muy') return '<p>Marcaron mucha confianza. Revisemos qué miraron: ahí está la clave.</p>' + extra;
+  return '<p>Bien que lo notaron. Una pista les puede ayudar.</p>' + extra;
+}
+const mensajeArmado = p => p.partes.map((pt, i) => T.armado[i] ? pt.inicio.replace(/…$/, '') + ' ' + T.armado[i] : '').filter(Boolean).join(' ');
+const normNum = s => { const n = Number(String(s).trim().replace(/\s+/g,'').replace(',', '.')); return isNaN(n) ? null : n; };
+function evaluar(p){
+  /* Devuelve {resp, ok, fb, err} o null si falta responder */
+  if(p.tipo === 'numero'){
+    const raw = $('#inpResp').value.trim(), n = normNum(raw);
+    if(raw === '' || n === null){ mensaje('aviso', 'Escriban un número antes de comprobar.'); return null; }
+    if(n === p.respuesta) return {resp:String(n), ok:true};
+    const f = p.fb[String(n)] || p.fbGeneral;
+    return {resp:String(n), ok:false, fb:f[0], err:f[1]};
+  }
+  if(p.tipo === 'opcion'){
+    if(!T.opcion){ mensaje('aviso','Elijan una opción.'); return null; }
+    if(T.opcion === p.respuesta) return {resp:T.opcion, ok:true};
+    const f = p.fb[T.opcion] || ['Vuelvan a mirar la tabla o el gráfico.','otro'];
+    return {resp:T.opcion, ok:false, fb:f[0], err:f[1]};
+  }
+  if(p.tipo === 'armar'){
+    if(p.partes.some((_, i) => !T.armado[i])){ mensaje('aviso', 'Elijan una frase en cada parte.'); return null; }
+    const resp = mensajeArmado(p), malas = T.armado.filter(o => p.fb[o]);
+    if(!malas.length) return {resp, ok:true};
+    const fbs = malas.map(o => p.fb[o]);
+    return {resp, ok:false, fb:fbs.map(f => f[0]).join(' '), err:[...new Set(fbs.map(f => f[1]))].join('|')};
+  }
+  if(p.tipo === 'multi'){
+    if(!T.multi.size){ mensaje('aviso','Marquen al menos una opción.'); return null; }
+    const sel = p.opciones.filter(o => T.multi.has(o)), correctas = sel.filter(o => p.respuesta.includes(o)), malas = sel.filter(o => !p.respuesta.includes(o));
+    const resp = sel.map(o => 'op' + (p.opciones.indexOf(o) + 1)).join('+');
+    if(!malas.length && correctas.length === p.respuesta.length) return {resp, ok:true};
+    const fbs = malas.map(o => p.fb[o] || ['Esa no es una trampa del gráfico.','otro']);
+    const errs = fbs.map(f => f[1]);
+    let txt = fbs.map(f => f[0]).join(' ');
+    if(correctas.length < p.respuesta.length){ errs.push('trampa_incompleta'); txt += ` Encontraron ${correctas.length} de ${p.respuesta.length} trampas: ¡hay más escondidas!`; }
+    return {resp, ok:false, fb:txt.trim(), err:[...new Set(errs)].join('|')};
+  }
+  return null;
+}
+function comprobar(){
+  const a = actividad(), p = a.preguntas[T.q];
+  if(T.resuelta) return;
+  if(p.tipo === 'explicar'){
+    const t = $('#expl').value.trim();
+    if(t.length < CONFIG.minCaracteres){ mensaje('aviso', `Les falta un poquito: escriban al menos ${CONFIG.minCaracteres} caracteres para que su mensaje se entienda.`); return; }
+    return cerrarExplicacion(t);
+  }
+  const r = evaluar(p); if(!r) return;
+  T.intentos++;
+  const cal = calibracion(r.ok);
+  const err = r.ok ? '' : (r.err || 'otro');
+  const cayo = !r.ok && p.sesgo && err.split('|').some(e => p.sesgo.includes(e)) ? 1 : 0;
+  registrar({lugar:a.id, tarea:p.tarea, nivel_curcio:p.curcio, pregunta:p.id, tipo:T.tipo === 'compuerta' ? 'compuerta_' + p.tipo : p.tipo, intento:T.intentos, confianza:T.confianza, respuesta:r.resp, correcto:r.ok?1:0, error:err, sesgo:p.sesgo ? cayo : '', pistas_usadas:T.pistas, segundos:sumarTiempo()});
+  if(r.ok){
+    T.resuelta = true;
+    const P = PERSONAJES[p.bien.q];
+    marcarHecha(p, `<p><b>¡Bacán, lo lograron!</b></p><p><b>${esc(P.nombre)}:</b> «${esc(p.bien.t)}»</p><p>${esc(p.modelo || '')}</p>${cal}`);
+  } else {
+    mensaje('mal', `<p><b>Pucha, todavía no.</b> ${esc(r.fb)}</p>${cal}<p><small>Pueden intentarlo de nuevo las veces que quieran. Equivocarse no les quita nada.</small></p>`);
+    const seg = $$('.seg button'); if(seg.length){ seg.forEach(x => x.setAttribute('aria-pressed','false')); T.confianza = ''; $('#btnComprobar').disabled = true; }
+  }
+}
+function cerrarExplicacion(texto){
+  const a = actividad(), p = a.preguntas[T.q];
+  T.intentos++;
+  registrar({lugar:a.id, tarea:p.tarea, nivel_curcio:p.curcio, pregunta:p.id, tipo:'explicar', intento:T.intentos, confianza:'', respuesta:texto, correcto:'', error:'', sesgo:'', pistas_usadas:'', segundos:sumarTiempo()});
+  T.resuelta = true;
+  const P = PERSONAJES[p.bien.q];
+  marcarHecha(p, `<p><b>¡Mensaje enviado!</b></p><p><b>${esc(P.nombre)}:</b> «${esc(p.bien.t)}»</p><p>Un ejemplo de mensaje: ${esc(p.modelo)}</p><p><small>Comparen: ¿qué dijeron igual?, ¿qué le agregarían?</small></p>`);
+}
+function marcarHecha(p, html){
+  E.hechas[p.id] = true;
+  const a = actividad(), bs = $('#btnSiguiente');
+  $('#btnComprobar').hidden = true; const bp = $('#btnPista'); if(bp) bp.hidden = true;
+  $$('.opcion, .seg button, #inpResp, #expl').forEach(el => el.disabled = true);
+  if(T.tipo === 'compuerta'){
+    guardar();
+    mensaje('ok', html + '<p><b>¡Acertijo resuelto!</b> Último paso: su compromiso para abrir la compuerta.</p>');
+    bs.hidden = false; bs.textContent = 'Elegir compromiso →';
+    return;
+  }
+  if(a.preguntas.every(x => E.hechas[x.id]) && !E.zonasHechas[a.id]){
+    E.zonasHechas[a.id] = true; E.insignias[a.insignia] = true;
+    if(ZONAS.every(z => E.zonasHechas[z.id])){ E.insignias.guardian = true; E.fin = ahora(); }
+    registrar({lugar:a.id, tarea:'', nivel_curcio:'', pregunta:'', tipo:'playa_completa', intento:'', confianza:'', respuesta:'', correcto:'', error:'', sesgo:'', pistas_usadas:'', segundos:''});
+  }
+  guardar(); pintarPasos();
+  mensaje('ok', html);
+  bs.hidden = false; bs.textContent = T.q < a.preguntas.length - 1 ? 'Siguiente tarea →' : 'Terminar la playa →';
+  bs.focus({preventScroll:true});
+}
+function siguiente(){
+  const a = actividad();
+  if(T.tipo === 'compuerta'){ if(E.compuertas[COMPUERTAS[T.idx].id]) abrirTrabajo('zona', T.idx); else pintarTrabajo(); return; }
+  if(T.q < a.preguntas.length - 1){ T.q++; pintarTrabajo(); return; }
+  T.fin = true; pintarPasos(); pintarDerecha(a, a.preguntas[T.q]); $('#der').scrollTop = 0;
+}
+function celebracion(a){
+  const ins = INSIGNIAS.find(b => b.id === a.insignia), sig = ZONAS.findIndex(z => z.id === a.id) + 1, fd = faroDatos();
+  if(sig >= ZONAS.length){
+    const g = INSIGNIAS.find(b => b.id === 'guardian');
+    const comp = COMPUERTAS.filter(c => c && E.casos[c.id]).map(c => E.casos[c.id].compromiso);
+    return `<div class="celebra"><h3 style="margin:0">¡Investigación cumplida!</h3><div style="display:flex;justify-content:center;gap:10px"><div class="ins">${spriteSVG(ins.sprite, 8, ins.nombre)}</div><div class="ins">${spriteSVG(g.sprite, 7, g.nombre)}</div></div>
+      <p>Ganaron las insignias <b>«${esc(ins.nombre)}»</b> y <b>«${esc(g.nombre)}»</b>. Pusieron su último bloque en el faro (${fd.llenos} de ${fd.total}).</p>
+      ${burbuja({q:'peli', t:'Desenmascararon lo que daña la costa y los gráficos tramposos de Plasticón. ¡Son Detectives de Datos! Llamen a la profe para revisar lo que aprendieron.'})}
+      ${comp.length ? `<div style="text-align:left"><b>Sus compromisos para cuidar la costa:</b><ul class="compromisos">${comp.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+      <div class="acciones" style="justify-content:center;margin-top:10px"><button class="btn" id="btnFinResumen">Llamar a la profe: Resumen de Interacciones</button><button class="btn sec" id="btnFinMapa">Volver al mapa</button></div></div>`;
+  }
+  const boton = E.compuertas[COMPUERTAS[sig].id] ? `<button class="btn" id="btnSigZona">Ir a ${esc(ZONAS[sig].nombre)} →</button>` : `<button class="btn" id="btnSigGate">Abrir la ${COMPUERTAS[sig].nombre} →</button>`;
+  return `<div class="celebra"><h3 style="margin:0">¡Playa completada!</h3><div class="ins">${spriteSVG(ins.sprite, 8, ins.nombre)}</div>
+    <p>Ganaron la insignia <b>«${esc(ins.nombre)}»</b> y pusieron un bloque en el faro del curso (${fd.llenos} de ${fd.total}).</p>
+    <div class="acciones" style="justify-content:center">${boton}<button class="btn sec" id="btnFinMapa">Volver al mapa</button></div></div>`;
+}
+function enlazarCelebracion(){
+  const sg = $('#btnSigGate'), sz = $('#btnSigZona'), fr = $('#btnFinResumen'), i = ZONAS.findIndex(z => z.id === actividad().id) + 1;
+  if(sg) sg.addEventListener('click', () => abrirTrabajo('compuerta', i));
+  if(sz) sz.addEventListener('click', () => abrirTrabajo('zona', i));
+  if(fr) fr.addEventListener('click', () => { irResumenTrasPin = true; mostrar(profeOk ? 'pResumen' : 'pDocente'); });
+  $('#btnFinMapa').addEventListener('click', () => mostrar('pMapa'));
+}
+
+/* =========================================================
+   RESUMEN DE INTERACCIONES (cálculo)
+   ========================================================= */
+function calcularResumen(){
+  const intentosDe = id => E.registro.filter(r => r.pregunta === id && (r.correcto === 0 || r.correcto === 1));
+  const tareas = TAREAS.map(t => {
+    const rs = intentosDe(t.id), expl = E.registro.filter(r => r.pregunta === t.id && r.tipo === 'explicar');
+    const iOk = rs.findIndex(r => r.correcto === 1);
+    const errores = rs.filter(r => r.correcto === 0).flatMap(r => String(r.error || 'otro').split('|'));
+    const pistas = Math.max(0, ...E.registro.filter(r => r.pregunta === t.id && r.tipo === 'pista').map(r => Number(r.pistas_usadas) || 0));
+    const sesgoCayo = t.sesgo ? errores.some(e => t.sesgo.includes(e)) : null;
+    return {
+      t, logrado:!!E.hechas[t.id], explicacion: expl.length ? expl[expl.length-1].respuesta : '',
+      autoevaluada: t.tipo !== 'explicar',
+      intentos: t.tipo === 'explicar' ? expl.length : rs.length,
+      intentosParaLograr: t.tipo === 'explicar' ? (expl.length ? 1 : null) : (iOk >= 0 ? iOk + 1 : null),
+      primerOk: rs.length ? rs[0].correcto === 1 : null,
+      errores, pistas, segundos: E.tiempo[t.id] || 0,
+      respuestas: rs.map(r => ({resp:r.respuesta, ok:r.correcto === 1, conf:r.confianza, err:r.error})),
+      sesgoCayo
+    };
+  });
+  const niveles = [1,2,3,4].map(nv => {
+    const ts = tareas.filter(x => x.t.curcio === nv), auto = ts.filter(x => x.autoevaluada), intentadas = auto.filter(x => x.intentos > 0);
+    const primerOk = intentadas.filter(x => x.primerOk).length, errores = auto.reduce((s,x) => s + x.errores.length, 0);
+    const conMuchos = intentadas.filter(x => x.intentos - (x.intentosParaLograr ? 1 : 0) >= 2 || (!x.logrado && x.intentos >= 2));
+    const fallaPrimero = intentadas.filter(x => !x.primerOk).length;
+    const dificultad = intentadas.length > 0 && (conMuchos.length > 0 || (intentadas.length >= 2 && fallaPrimero / intentadas.length >= 0.5));
+    return {nivel:nv, total:ts.length, logradas:ts.filter(x => x.logrado).length, intentadas:intentadas.length, primerOk, pctPrimer:pct(primerOk, intentadas.length),
+      intentosProm: intentadas.length ? (intentadas.reduce((s,x) => s + x.intentos, 0) / intentadas.length) : null, errores, dificultad, tareasDificiles:conMuchos.map(x => x.t.tarea)};
+  });
+  const mapaErr = {};
+  tareas.forEach(x => x.errores.forEach(e => { if(!mapaErr[e]) mapaErr[e] = {n:0, tareas:new Set()}; mapaErr[e].n++; mapaErr[e].tareas.add(x.t.tarea); }));
+  const auto = tareas.filter(x => x.autoevaluada && x.intentos > 0);
+  return {
+    tareas, niveles, mapaErr,
+    totales:{
+      tareas:TAREAS.length, logradas:tareas.filter(x => x.logrado).length,
+      intentos:auto.reduce((s,x) => s + x.intentos, 0), primerOk:auto.filter(x => x.primerOk).length, intentadas:auto.length,
+      pistas:tareas.reduce((s,x) => s + x.pistas, 0), segundos:tareas.reduce((s,x) => s + x.segundos, 0),
+      calibracion: E.calibracion.total ? pct(E.calibracion.coincide, E.calibracion.total) : null
+    }
+  };
+}
+
+/* =========================================================
+   PANEL DE LA PROFE
+   ========================================================= */
+let irResumenTrasPin = false;
+$('#btnPin').addEventListener('click', () => {
+  if($('#pin').value === CONFIG.pinDocente){
+    profeOk = true; $('#pin').value = ''; $('#msgPin').className = 'mensaje'; $('#msgPin').textContent = '';
+    if(irResumenTrasPin){ irResumenTrasPin = false; mostrar('pResumen'); } else pintarDocente();
+  } else { $('#msgPin').className = 'mensaje mal'; $('#msgPin').textContent = 'PIN incorrecto.'; }
+});
+$('#pin').addEventListener('keydown', e => { if(e.key === 'Enter') $('#btnPin').click(); });
+const COLS = ['fecha_hora','equipo','animo','lugar','tarea','nivel_curcio','pregunta','tipo','intento','confianza','respuesta','correcto','error','sesgo','pistas_usadas','segundos'];
+function pintarDocente(){
+  $('#cajaPin').hidden = profeOk; $('#panelProfe').hidden = !profeOk; if(!profeOk) return;
+  $('#nEquipos').value = E.nEquipos; $('#otrasZonas').value = E.otrasZonas;
+  const R = calcularResumen();
+  $('#miniResumen').innerHTML = `Equipo <b>${esc(E.equipo.nombre||'—')}</b>: ${R.totales.logradas} de ${R.totales.tareas} tareas logradas, ${R.totales.intentos} intentos, ${R.totales.pistas} pistas.`;
+  $('#tablaLog').innerHTML = `<thead><tr>${COLS.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${E.registro.slice(-80).reverse().map(r => `<tr>${COLS.map(c=>`<td>${esc(r[c] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+$('#btnVerResumen').addEventListener('click', () => mostrar('pResumen'));
+$('#btnAbrirGuia').addEventListener('click', () => mostrar('pGuia'));
+$('#nEquipos').addEventListener('change', e => { E.nEquipos = Math.max(1, +e.target.value || 1); guardar(); });
+$('#otrasZonas').addEventListener('change', e => { E.otrasZonas = Math.max(0, +e.target.value || 0); guardar(); });
+function descargarCSV(nombre, cols, filas){
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const csv = '﻿' + cols.join(';') + '\n' + filas.map(r => cols.map(c => q(r[c])).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `${nombre}_${(E.equipo.nombre||'equipo').replace(/\s+/g,'_')}_${ahora().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+$('#btnCsv').addEventListener('click', () => descargarCSV('intentos_guardianes_5B', COLS, E.registro));
+const COLS_RES = ['equipo','tarea','lugar','nivel_curcio','tipo','logrado','intentos_totales','intentos_para_lograr','acierto_primer_intento','respuestas','errores','sesgo_intencionado','cayo_en_sesgo','pistas','segundos'];
+$('#btnCsvRes').addEventListener('click', () => {
+  const R = calcularResumen();
+  descargarCSV('resumen_tareas_guardianes_5B', COLS_RES, R.tareas.map(x => ({
+    equipo:E.equipo.nombre, tarea:x.t.tarea, lugar:x.t.lugarNombre, nivel_curcio:x.t.curcio, tipo:x.t.tipo, logrado:x.logrado?1:0,
+    intentos_totales:x.intentos, intentos_para_lograr:x.intentosParaLograr ?? '', acierto_primer_intento:x.primerOk === null ? '' : (x.primerOk?1:0),
+    respuestas: x.t.tipo === 'explicar' ? x.explicacion : x.respuestas.map(r => `${r.resp}${r.ok?'(ok)':'(x)'}`).join(' > '),
+    errores:x.errores.join('|'), sesgo_intencionado:(x.t.sesgo||[]).join('|'), cayo_en_sesgo:x.sesgoCayo === null ? '' : (x.sesgoCayo?1:0),
+    pistas:x.pistas, segundos:Math.round(x.segundos)
+  })));
+});
+$('#btnReset').addEventListener('click', () => {
+  const b = $('#btnReset');
+  if(b.dataset.confirm !== '1'){ b.dataset.confirm = '1'; b.textContent = '¿Segura? Toque otra vez para borrar todo'; return; }
+  E = estadoInicial(); guardar(); b.dataset.confirm = ''; b.textContent = 'Reiniciar este dispositivo'; profeOk = false; mostrar('pPortada');
+});
+
+/* =========================================================
+   RESUMEN DE INTERACCIONES (vista)
+   ========================================================= */
+const NOMBRE_NIVEL = {1:'Nivel 1 · Leer los datos', 2:'Nivel 2 · Leer entre los datos', 3:'Nivel 3 · Leer más allá', 4:'Nivel 4 · Leer detrás'};
+function pintarResumen(){
+  const R = calcularResumen(), tt = R.totales;
+  let h = '';
+  // 1. Identificación
+  h += `<div class="tarjeta"><h3>1. Identificación</h3><div class="res-cab">
+    <span>Equipo: <b>${esc(E.equipo.nombre||'—')}</b></span><span>Integrantes: <b>${(E.equipo.integrantes||[]).filter(Boolean).map(esc).join(' · ') || '—'}</b></span>
+    <span>Ánimo al inicio: <b>${esc(E.animo||'—')}</b></span><span>Inicio: <b>${esc(E.inicio||'—')}</b></span><span>Término: <b>${esc(E.fin||'en curso')}</b></span>
+    <span>Insignias: <b>${INSIGNIAS.filter(b => E.insignias[b.id]).map(b => esc(b.nombre)).join(', ') || '—'}</b></span></div>
+    <p class="nota">Los nombres de integrantes se ven solo en este dispositivo. Los CSV identifican al equipo, no a cada estudiante.</p></div>`;
+  // KPIs
+  h += `<div class="kpis">
+    <div class="kpi"><b>${tt.logradas}/${tt.tareas}</b><span>tareas logradas (incluye 3 compuertas)</span></div>
+    <div class="kpi"><b>${tt.intentadas ? pct(tt.primerOk, tt.intentadas) + '%' : '—'}</b><span>aciertos al primer intento (${tt.primerOk} de ${tt.intentadas})</span></div>
+    <div class="kpi"><b>${tt.intentos}</b><span>intentos en total</span></div>
+    <div class="kpi"><b>${tt.pistas}</b><span>pistas usadas</span></div>
+    <div class="kpi"><b>${tt.calibracion === null ? '—' : tt.calibracion + '%'}</b><span>confianza calibrada</span></div>
+    <div class="kpi"><b>${fmtSeg(tt.segundos)}</b><span>tiempo activo en tareas</span></div></div>`;
+  // 2. Niveles de Curcio
+  h += `<div class="tarjeta"><h3>2. Desempeño por nivel de Curcio</h3><p class="nota" style="margin-top:0">La barra muestra el porcentaje de tareas resueltas al primer intento. Se marca <span class="alerta">Dificultad reiterada</span> cuando el equipo falló 2 o más veces en una misma tarea del nivel, o falló el primer intento en la mitad o más de las tareas del nivel.</p>`;
+  R.niveles.forEach(n => {
+    const v = n.pctPrimer, cls = v === null ? '' : v >= 70 ? '' : v >= 40 ? 'medio' : 'bajo';
+    const estado = !n.intentadas ? '<span class="pend-tag">Sin intentos</span>' : n.dificultad ? `<span class="alerta">Dificultad reiterada${n.tareasDificiles.length ? ' (' + n.tareasDificiles.join(', ') + ')' : ''}</span>` : '<span class="bien-tag">Sin dificultad reiterada</span>';
+    h += `<div class="nivel-fila"><b>${NOMBRE_NIVEL[n.nivel]}</b><div class="nivel-barra" title="${v ?? 0}%"><i class="${cls}" style="width:${v ?? 0}%"></i></div><span>${v === null ? '—' : v + '%'} · ${n.logradas}/${n.total} logradas · ${n.intentosProm === null ? '—' : n.intentosProm.toFixed(1).replace('.', ',')} intentos/tarea<br>${estado}</span></div>`;
+  });
+  h += '</div>';
+  // 3. Sesgos intencionados
+  const conSesgo = R.tareas.filter(x => x.t.sesgo);
+  h += `<div class="tarjeta"><h3>3. Sesgos y errores intencionados</h3><p class="nota" style="margin-top:0">Tareas diseñadas para provocar un error típico. «Cayó» significa que al menos un intento incorrecto tuvo ese tipo de error.</p><div class="res-tabla"><table class="res"><thead><tr><th>Tarea</th><th>Trampa diseñada</th><th>Resultado</th><th>Veces</th></tr></thead><tbody>`;
+  conSesgo.forEach(x => {
+    const veces = x.errores.filter(e => x.t.sesgo.includes(e)).length;
+    const res = x.intentos === 0 ? '<span class="pend-tag">Pendiente</span>' : x.sesgoCayo ? '<span class="alerta">Cayó</span>' : '<span class="bien-tag">No cayó</span>';
+    h += `<tr><td><b>${esc(x.t.tarea)}</b> ${esc(x.t.lugarNombre)}</td><td>${x.t.sesgo.map(e => esc(ERRORES[e].nombre)).join('<br>')}</td><td>${res}</td><td class="c">${veces}</td></tr>`;
+  });
+  h += '</tbody></table></div></div>';
+  // 4. Mapa de errores
+  const errs = Object.entries(R.mapaErr).sort((a,b) => b[1].n - a[1].n);
+  h += `<div class="tarjeta"><h3>4. Mapa de errores comunes</h3>`;
+  h += errs.length ? `<div class="res-tabla"><table class="res"><thead><tr><th>Tipo de error</th><th>Nivel</th><th>Veces</th><th>Tareas</th><th>Sugerencia didáctica</th></tr></thead><tbody>${errs.map(([k,v]) => { const e = ERRORES[k] || ERRORES.otro; return `<tr><td><b>${esc(e.nombre)}</b>${v.n >= 2 ? ' <span class="alerta">reiterado</span>' : ''}</td><td class="c">${e.nivel || '—'}</td><td class="c">${v.n}</td><td>${[...v.tareas].map(esc).join(', ')}</td><td>${esc(e.sugerencia)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p>Sin errores registrados todavía.</p>';
+  h += '</div>';
+  // 5. Trazabilidad
+  h += `<div class="tarjeta"><h3>5. Trazabilidad de respuestas por tarea</h3><p class="nota" style="margin-top:0">Cada intento en orden: verde = correcto, rojo = incorrecto. Entre paréntesis, la confianza declarada (P = poco, A = algo, M = muy).</p><div class="res-tabla"><table class="res"><thead><tr><th>Tarea</th><th>Nivel</th><th>Representación</th><th>Respuestas del grupo</th><th>Intentos para lograrlo</th><th>Pistas</th><th>Tiempo</th><th>Errores detectados</th></tr></thead><tbody>`;
+  R.tareas.forEach(x => {
+    const conf = c => c ? ` (${c[0].toUpperCase()})` : '';
+    const textoResp = r => { if(x.t.tipo === 'multi') return r.resp.replace(/op(\d)/g, (m, d) => 'opción ' + d); return r.resp; };
+    const resp = x.t.tipo === 'explicar' ? (x.explicacion ? `<div class="explicacion">${esc(x.explicacion)}</div>` : '—') : (x.respuestas.length ? x.respuestas.map(r => `<span class="chip-r ${r.ok?'ok':'mal'}">${esc(textoResp(r))}${conf(r.conf)}</span>`).join('') : '—');
+    const lograr = !x.intentos ? '<span class="pend-tag">Pendiente</span>' : x.intentosParaLograr ? `<b>${x.intentosParaLograr}</b>` : `<span class="alerta">No logrado (${x.intentos})</span>`;
+    const errores = [...new Set(x.errores)].map(e => esc((ERRORES[e] || ERRORES.otro).nombre)).join('<br>') || '—';
+    h += `<tr><td><b>${esc(x.t.tarea)}</b><br><small>${esc(x.t.lugarNombre)}</small></td><td class="c">${x.t.curcio}</td><td>${esc(NOMBRE_VISUAL[x.t.visual.tipo])}</td><td>${resp}</td><td class="c">${lograr}</td><td class="c">${x.pistas}</td><td>${fmtSeg(x.segundos)}</td><td>${errores}</td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  const multi = TAREAS.find(t => t.tipo === 'multi');
+  if(multi) h += `<p class="nota">Opciones de la tarea ${esc(multi.tarea)}: ${multi.opciones.map((o, i) => `<b>${i+1}</b> ${esc(o)}${multi.respuesta.includes(o) ? ' ✓' : ''}`).join(' · ')}</p>`;
+  h += '</div>';
+  // 6. Compromisos
+  h += `<div class="tarjeta"><h3>6. Compromisos de las compuertas</h3><p class="nota" style="margin-top:0">Después de cada acertijo, el equipo elige una acción para cuidar la costa. No entra en los indicadores de Curcio.</p><div class="res-tabla"><table class="res"><thead><tr><th>Compuerta</th><th>Daño descubierto</th><th>Compromiso elegido</th><th>Segundos</th></tr></thead><tbody>`;
+  COMPUERTAS.filter(Boolean).forEach(c => {
+    const reg = E.registro.find(r => r.pregunta === c.id + 'compromiso');
+    h += `<tr><td><b>${esc(c.nombre)}</b></td><td>${esc(c.caso.cadena.join(' → '))}</td><td>${E.casos[c.id] ? esc(E.casos[c.id].compromiso) : '<span class="pend-tag">Pendiente</span>'}</td><td class="c">${reg ? reg.segundos : '—'}</td></tr>`;
+  });
+  h += '</tbody></table></div></div>';
+  h += `<div class="acciones no-print"><button class="btn verde" id="btnCsvRes2">CSV resumen por tarea</button><button class="btn sec" id="btnCsv2">CSV de intentos</button></div>`;
+  $('#resumenCuerpo').innerHTML = h;
+  $('#btnCsvRes2').addEventListener('click', () => $('#btnCsvRes').click());
+  $('#btnCsv2').addEventListener('click', () => $('#btnCsv').click());
+}
+$('#btnImprimirRes').addEventListener('click', () => { document.body.classList.add('imprimiendo-resumen'); window.print(); });
+window.addEventListener('afterprint', () => document.body.classList.remove('imprimiendo-resumen'));
+
+/* =========================================================
+   GUÍA DOCENTE
+   ========================================================= */
+const PRINCIPIOS = [
+  ['1. Progresión por niveles de Curcio','San Antonio (niveles 1 y 2), Cartagena (1, 2 y paso al 3), El Quisco (2 y 3) y Algarrobo (3 y 4). La representación también avanza: tablas, pictogramas, barras agrupadas y líneas.','En 5° B, 83% resolvió el nivel 1 y solo 12,5% logró argumentar.'],
+  ['2. Tres problemáticas reales del litoral','Contaminación urbana, erosión costera y crisis hídrica, integradas al final en Algarrobo. Lugares reales, datos inventados.','El valor de utilidad ya es alto (87%): el contexto da sentido, no convence.'],
+  ['3. Errores intencionados con nombre','Las tareas 1.3, 2.1, 2.2, 3.2, 4.2a y 4.2b están diseñadas para provocar un error típico. Cada respuesta incorrecta queda etiquetada en el Resumen de Interacciones.','Solo 2 de 24 estudiantes de 5° B detectaron el desajuste entre tabla y gráfico.'],
+  ['4. El error sin castigo','Intentos ilimitados, tres pistas graduadas por tarea y retroalimentación según el error. Sin vidas, sin tiempo, sin notas.','71% de 5° B declara nervios; 67% dice que equivocarse lo motiva a reintentar.'],
+  ['5. Compuertas: acertijo y compromiso','Cada compuerta tiene un acertijo breve que presenta en pequeño la representación de la playa siguiente (pictograma, barras y líneas). Al resolverlo, el equipo lee qué causaba el daño en la playa anterior y elige con un toque un compromiso para cuidar la costa. El acertijo es de un toque y la compuerta dura unos 2 a 3 minutos para no cortar el ritmo del juego.','El salto entre representaciones es donde se concentran los errores de transnumeración.'],
+  ['6. Meta colectiva, sin ranking','Cada equipo aporta bloques al mismo faro del curso.','La ansiedad es alta en 5° B y está polarizada.'],
+  ['7. Confianza antes de responder','El equipo marca qué tan seguro está y la retroalimentación comenta si coincidió. Insignia «Me conozco».','En 5° B, sentirse capaz es lo que más se asocia al desempeño (ρ = 0,60).'],
+  ['8. Leer detrás de los datos','El Capitán Plasticón presenta una conclusión tramposa: el equipo busca las trampas y le arma un mensaje con frases (Formación Ciudadana, Ley 20.911).','En 5° B, 11 de 24 dejaron el ítem de argumentación sin respuesta codificable.']
+];
+function pintarGuia(){
+  $('#principios').innerHTML = '<h3>Principios y mecánicas</h3>' + PRINCIPIOS.map(([t,m,e]) => `<div class="principio"><b>${esc(t)}</b><p>${esc(m)}</p><p class="nota">Dato del diagnóstico: ${esc(e)}</p></div>`).join('');
+  $('#guiaPersonajes').innerHTML = Object.values(PERSONAJES).map(P => `<div class="voz ${P.villano?'villano':''}" style="margin:6px 0"><div class="av px">${spriteSVG(P.sprite, 3, P.nombre)}</div><div class="globo"><b>${esc(P.nombre)}</b>${esc(P.rol)}</div></div>`).join('');
+}
+
+/* =========================================================
+   GUÍA IMPRESA
+   ========================================================= */
+function construirGuiaImpresa(){
+  const lineas = n => `<div class="lineas">${'<div></div>'.repeat(n)}</div>`;
+  const conf = '<p>¿Cuánta confianza tenemos? ○ Poca &nbsp; ○ Algo &nbsp; ○ Mucha</p>';
+  const dice = v => `<p><i>${esc(PERSONAJES[v.q].nombre)}:</i> «${esc(v.t)}»</p>`;
+  const preg = (p, previo) => {
+    let h = `<p><b>Tarea ${esc(p.tarea)}</b></p>` + (p.voz ? dice(p.voz) : '') + `<h3>${esc(p.texto)}</h3>`;
+    const mismo = previo && JSON.stringify(p.visual) === JSON.stringify(previo);
+    h += mismo ? '<p><i>(Usen la misma tabla o gráfico de la tarea anterior.)</i></p>' : visual(p.visual) + (p.visual.fuente ? `<p><b>${esc(p.visual.fuente)}</b></p>` : '');
+    if(p.tipo === 'opcion') h += '<p>' + p.opciones.map(o => '○ ' + esc(o)).join('<br>') + '</p>';
+    if(p.tipo === 'multi') h += '<p>Marquen todas las correctas:<br>' + p.opciones.map(o => '□ ' + esc(o)).join('<br>') + '</p>';
+    if(p.tipo === 'armar') h += p.partes.map(pt => `<p><b>${esc(pt.inicio)}</b><br>${pt.opciones.map(o => '○ ' + esc(o)).join('<br>')}</p>`).join('');
+    if(p.tipo === 'numero') h += `<p>Respuesta: ____________ ${esc(p.unidad||'')}</p>`;
+    if(p.tipo === 'explicar') h += '<p>Pueden partir con: ' + p.inicios.map(esc).join(' / ') + '</p>' + lineas(5);
+    if(['numero','opcion','multi','armar'].includes(p.tipo)) h += conf;
+    return h;
+  };
+  let html = `<div class="pg"><h1>De San Antonio a Algarrobo: Datos para Cuidar la Costa · 5° Básico B</h1><p>Guía de trabajo por equipos. Equipo: ______________________ Fecha: ____________</p><p>Integrantes (de 1 a 4): ____________________________________________________________</p><p>Aquí equivocarse es parte del juego: pueden borrar e intentar de nuevo. Las pistas están al final de cada playa. Para pasar a la playa siguiente, resuelvan el acertijo de la compuerta y muéstrenselo a la profe.</p><p><small>Lugares reales, datos inventados para el juego.</small></p></div>`;
+  ZONAS.forEach((z, i) => {
+    html += '<div class="pg">';
+    if(i > 0){ const c = COMPUERTAS[i], k = c.caso; html += `<h2>${esc(c.nombre)}</h2><h3>Acertijo para abrir el camino a ${esc(z.nombre)}</h3>` + preg(c.pregunta, null) + `<p><b>Lo que descubrieron en ${esc(ZONAS[i-1].nombre)}:</b> ${esc(k.descubrimiento)}</p><p><b>Nuestro compromiso</b> (marquen uno):<br>${k.compromisos.map(t => '○ ' + esc(t)).join('<br>')}</p><p>Visto bueno de la profe: __________</p><hr>`; }
+    html += `<h2>${esc(z.nombre)}: ${esc(z.titulo)}</h2>` + z.intro.map(dice).join('');
+    let previo = null;
+    z.preguntas.forEach(p => { html += preg(p, previo); previo = p.visual; });
+    const pis = z.preguntas.filter(p => p.pistas).map(p => `<li>Tarea ${esc(p.tarea)}: ${p.pistas.map(esc).join(' → ')}</li>`).join('');
+    if(pis) html += `<p style="margin-top:12px"><b>Pistas (úsenlas en orden, solo si las necesitan):</b></p><ul style="font-size:10.5pt">${pis}</ul>`;
+    html += '</div>';
+  });
+  $('#guia-impresa').innerHTML = html;
+}
+$('#btnImprimir').addEventListener('click', () => { document.body.classList.remove('imprimiendo-resumen'); construirGuiaImpresa(); window.print(); });
+
+/* Exponer datos para revisión y para generar la documentación */
+window.GUARDIANES = { CONFIG, PERSONAJES, ERRORES, ZONAS, COMPUERTAS, INSIGNIAS, TAREAS, calcularResumen, construirGuiaImpresa };
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+let tRes = 0;
+window.addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(() => { if(document.body.classList.contains('con-fondo')){ tamFondo(); if(reducirMov) cuadroFondo(performance.now()); } }, 120); });
+document.addEventListener('visibilitychange', () => { if(document.hidden) sumarTiempo(); else if(T) T.tMarca = Date.now(); });
+cargar();
+iniciarFondo();
+if(reducirMov) setTimeout(() => cuadroFondo(performance.now()), 0);
+})();
+</script>
+</body>
+</html>
